@@ -15,18 +15,20 @@ const upload = multer({ storage });
 
 // array 는 여러개 한개는 siggle
 router.post('/upload', upload.array('file'), async (req, res) => {
-    let {feedId} = req.body;
+    let {postId,mediaType} = req.body;
     const files = req.files;
     console.log(files);
 
     try{
         let results = [];
+        let host = `${req.protocol}://${req.get("host")}/`;
         for(let file of files){
+           
             let filename = file.filename;
             let destination = file.destination;
             let query = "INSERT INTO SNS_MEDIA_FILES (POST_ID, MEDIA_URL, MEDIA_TYPE, FILE_NAME) VALUES (?, ?, ?, ?)";
-            let fileFullPath = host + file.destination.replace(/\\/g, '/') + file.filename;
-            let result = await db.query(query, [postId, fileFullPath, mediaTypeFromMime, file.filename]);
+            let fileFullPath = host + destination.replace(/\\/g, '/') + filename;
+            let result = await db.query(query, [postId, fileFullPath, mediaType, file.filename]);
             results.push(result);
         }
         res.json({
