@@ -16,7 +16,7 @@ import { PhotoCamera } from '@mui/icons-material';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
 import { useRef } from 'react';
-import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+
 
 function Register() {
   const [files, setFile] = React.useState([]);
@@ -56,7 +56,12 @@ function Register() {
     let param = {
       content: contentRef.current.value,
       userId: decoded.userId,
-      mediaType: mediaType,
+      mediaType : mediaType
+    }
+    
+    if ( (mediaType === 'V' || mediaType === 'I') && files.length === 0) {
+        alert("선택하신 게시물 유형(쇼츠/사진)에 맞는 파일을 첨부해주세요!");
+        return;
     }
      fetch(`http://localhost:3010/feed`, {
       method: "POST",
@@ -72,7 +77,11 @@ function Register() {
       .then(data => {
         console.log(data);
         alert("등록되었습니다!");
+        if (files.length > 0) {
         fnUploadFile(data.result[0].insertId);
+        } else {
+            navigate("/feed"); 
+        }
       })
       .catch(error => {
         console.error("등록 중 오류 발생:", error);
@@ -80,13 +89,16 @@ function Register() {
       });
 
   }
-   const fnUploadFile = (feedId) => {
-    console.log("feedId", feedId);
+   const fnUploadFile = (POST_ID) => {
+    console.log("POST_ID", POST_ID);
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
       formData.append("file", files[i]);
     }
-    formData.append("feedId", feedId);
+    formData.append("POST_ID", POST_ID);
+    console.log("클라이언트 디버그: 파일 MIME Type:", mediaType);
+    formData.append("MEDIA_TYPE", mediaType);
+   
     fetch("http://localhost:3010/feed/upload", {
       method: "POST",
       body: formData

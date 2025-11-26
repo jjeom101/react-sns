@@ -15,27 +15,34 @@ const upload = multer({ storage });
 
 // array 는 여러개 한개는 siggle
 router.post('/upload', upload.array('file'), async (req, res) => {
-    let {postId,mediaType} = req.body;
-    const files = req.files;
-    console.log(files);
 
-    try{
+    let  mediaType  = req.body.MEDIA_TYPE;
+    console.log("req.body upload file ====>", req.body);
+    const postId = req.body.POST_ID;
+    const files = req.files;
+    console.log("클라이언트가 전송한 MEDIA_TYPE:", mediaType);
+    console.log(files);
+    if (!files || files.length === 0 || !postId) {
+        return res.status(400).json({ msg: "파일 또는 POST_ID가 누락되었습니다." });
+    }
+
+    try {
         let results = [];
         let host = `${req.protocol}://${req.get("host")}/`;
-        for(let file of files){
-           
+        for (let file of files) {
+
             let filename = file.filename;
             let destination = file.destination;
-            let query = "INSERT INTO SNS_MEDIA_FILES (POST_ID, MEDIA_URL, MEDIA_TYPE, FILE_NAME) VALUES (?, ?, ?, ?)";
+            let query = "INSERT INTO SNS_MEDIA_FILES (POST_ID, FILE_URL, MEDIA_TYPE, FILE_NAME) VALUES (?, ?, ?, ?)";
             let fileFullPath = host + destination.replace(/\\/g, '/') + filename;
             let result = await db.query(query, [postId, fileFullPath, mediaType, file.filename]);
             results.push(result);
         }
         res.json({
-            message : "result",
-            result : results
+            message: "result",
+            result: results
         });
-    } catch(err){
+    } catch (err) {
         console.log("에러 발생!", err);
         res.status(500).send("Server Error");
     }
@@ -46,7 +53,7 @@ router.get("/:userId", async (req, res) => {
     // console.log(`${req.protocol}://${req.get("host")}`);
     let { userId } = req.params;
     try {
-        let sql = "SELECT * FROM SNS_POSTS USER_ID = ? ";
+        let sql = "SELECT * FROM SNS_POSTS WHERE USER_ID = ? ";
         let [list] = await db.query(sql, [userId]);
         res.json({
             list,
@@ -58,11 +65,11 @@ router.get("/:userId", async (req, res) => {
     }
 })
 
-router.delete("/:feedId", authMiddleware, async (req, res) => {
-    let { feedId } = req.params;
+router.delete("/:POST_ID", authMiddleware, async (req, res) => {
+    let { POST_ID } = req.params;
     try {
         let sql = "DELETE FROM SNS_POSTS WHERE ID = ?";
-        let result = await db.query(sql, [feedId]);
+        let result = await db.query(sql, [POST_ID]);
         res.json({
             result: result,
             msg: "success"
@@ -73,46 +80,38 @@ router.delete("/:feedId", authMiddleware, async (req, res) => {
 })
 
 router.post("/", upload.array('files'), async (req, res) => {
-    let { userId, content } = req.body;
+    let { userId, content, mediaType } = req.body;
     const files = req.files;
+    console.log("req.body ====>", req.body);
 
-    let mediaUrl = null;
-    let mediaType = null;
-    let values;
     let sql;
+    let values;
 
-    if (uploadedFiles && uploadedFiles.length > 0) {
-        const file = uploadedFiles[0];
-        mediaUrl = file.path;
-        if (file.mimetype.startsWith('image/')) {
-            mediaType = 'I';
-        } else if (file.mimetype.startsWith('video/')) { 
-             mediaType = 'V';
-        } else {
-          
-            mediaUrl = null;
-            mediaType = null;
-        }
-         sql = "INSERT INTO SNS_POSTS (USER_ID, CONTENT, MEDIA_URL, MEDIA_TYPE) VALUES (?, ?, ?, ?)";
-        values = [userId, content, mediaUrl, mediaType];
+    if (mediaType === 'I' || mediaType === 'V') {
+
+        sql = "INSERT INTO SNS_POSTS (USER_ID, CONTENT, MEDIA_TYPE) VALUES (?, ?, ?)";
+        values = [userId, content, mediaType];
+        
     } else {
-         sql = "INSERT INTO SNS_POSTS (USER_ID, CONTENT) VALUES (?, ?)";
+  
+        sql = "INSERT INTO SNS_POSTS (USER_ID, CONTENT) VALUES (?, ?)";
         values = [userId, content];
     }
-        try {
-            
-            let result = await db.query(sql, values);
-           console.log("게시물 삽입 성공:", result);
-            res.json({
-                msg: "success",
-                result: result
-            })
+   
+    try {
 
-        } catch (error) {
-           console.error("DB 삽입 중 오류 발생:", error);
-           res.status(500).json({ msg: "게시물 등록 실패", error: error.message });
-        }
-    })
+        let result = await db.query(sql, values);
+        console.log("게시물 삽입 성공:", result);
+        res.json({
+            msg: "success",
+            result: result
+        })
+
+    } catch (error) {
+        console.error("DB 삽입 중 오류 발생:", error);
+        res.status(500).json({ msg: "게시물 등록 실패", error: error.message });
+    }
+})
 
 
 module.exports = router;
