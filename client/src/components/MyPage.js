@@ -1,86 +1,125 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Typography, Box, Avatar, Grid, Paper } from '@mui/material';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
 
 function MyPage() {
-   let [user, setUser] = useState();
-   let navigate = useNavigate();
+    // 💡 초기값으로 undefined 대신 null 또는 빈 객체를 사용하여 렌더링 오류 방지
+    let [user, setUser] = useState(null); 
+    let navigate = useNavigate();
 
-   function fnGetUser(){
-    // 원래 아이디를 jwt 토큰에서 꺼내야 함
-    const token = localStorage.getItem("token");
-    // console.log("token ==> ", token);
-    if(token){
-      const decoded = jwtDecode(token);
-      console.log("decoded ==> ", decoded);
+    function fnGetUser(){
+        const token = localStorage.getItem("token");
+        
+        if(token){
+            try {
+                const decoded = jwtDecode(token);
+                // 💡 DB의 USER_ID는 BIGINT 타입일 수 있으므로, 서버 쿼리에 맞게 ID를 전달
+                const extractedId = decoded.userId || decoded.id; 
+                
+                if (!extractedId) {
+                    throw new Error("토큰에 사용자 ID 정보가 없습니다.");
+                }
 
-      fetch("http://localhost:3010/user/" + decoded.userId)
-        .then(res => res.json())
-        .then(data => {
-          console.log(data);
-          setUser(data.user);
-        })
-    } else {
-      // 로그인페이지로 이동
-      alert("로그인 후 이용해주세요.");
-      navigate("/");
-
+                // 💡 [서버 통신] SNS_USERS 테이블을 사용하는 user/:userId 라우터 호출
+                fetch("http://localhost:3010/user/" + extractedId)
+                    .then(res => {
+                        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+                        return res.json();
+                    })
+                    .then(data => {
+                        console.log("서버에서 받은 사용자 데이터:", data);
+                        // 서버 응답이 { user: { USER_ID, NICKNAME, BIO, POST_COUNT, ... } } 형식이라고 가정
+                        setUser(data.user);
+                    })
+                    .catch(error => {
+                        console.error("사용자 정보 로드 오류:", error);
+                        alert("사용자 정보를 가져오는 데 실패했습니다.");
+                        // navigate("/"); // 실패 시 로그인 페이지로 이동은 선택 사항
+                    });
+            } catch (e) {
+                console.error("토큰 처리 오류:", e);
+                alert("유효하지 않은 토큰입니다. 다시 로그인해주세요.");
+                navigate("/");
+            }
+        } else {
+            // 로그인페이지로 이동
+            alert("로그인 후 이용해주세요.");
+            navigate("/");
+        }
     }
 
+    useEffect(()=>{
+        fnGetUser();
+    }, [])
     
-  }
-
-  useEffect(()=>{
-    fnGetUser();
-  }, [])
-  return (
-    <Container maxWidth="md">
-      <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="flex-start"
-        minHeight="100vh"
-        sx={{ padding: '20px' }}
-      >
-        <Paper elevation={3} sx={{ padding: '20px', borderRadius: '15px', width: '100%' }}>
-          {/* 프로필 정보 상단 배치 */}
-          <Box display="flex" flexDirection="column" alignItems="center" sx={{ marginBottom: 3 }}>
-            <Avatar
-              alt="프로필 이미지"
-              src="https://images.unsplash.com/photo-1551963831-b3b1ca40c98e" // 프로필 이미지 경로
-              sx={{ width: 100, height: 100, marginBottom: 2 }}
-            />
-            <Typography variant="h5">{user?.userName}</Typography>
-            <Typography variant="body2" color="text.secondary">
-               @{user?.userId}
-            </Typography>
-          </Box>
-          <Grid container spacing={2} sx={{ marginTop: 2 }}>
-            <Grid item xs={4} textAlign="center">
-              <Typography variant="h6">팔로워</Typography>
-              <Typography variant="body1">{user?.follower}</Typography>
-            </Grid>
-            <Grid item xs={4} textAlign="center">
-              <Typography variant="h6">팔로잉</Typography>
-              <Typography variant="body1">{user?.following}</Typography>
-            </Grid>
-            <Grid item xs={4} textAlign="center">
-              <Typography variant="h6">게시물</Typography>
-              <Typography variant="body1">{user?.cnt}</Typography>
-            </Grid>
-          </Grid>
-          <Box sx={{ marginTop: 3 }}>
-            <Typography variant="h6">내 소개</Typography>
-            <Typography variant="body1">
-            {user?.intro}
-            </Typography>
-          </Box>
-        </Paper>
-      </Box>
-    </Container>
-  );
+    // user가 로딩 중일 때 (null일 때) 렌더링 방지
+    if (!user) {
+        return (
+            <Container maxWidth="md" sx={{ textAlign: 'center', mt: 5 }}>
+                <Typography variant="h6">사용자 정보를 불러오는 중입니다...</Typography>
+            </Container>
+        );
+    }
+    
+    return (
+        <Container maxWidth="md">
+            <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="flex-start"
+                minHeight="100vh"
+                sx={{ padding: '20px' }}
+            >
+                <Paper elevation={3} sx={{ padding: '20px', borderRadius: '15px', width: '100%' }}>
+                    
+                    {/* 프로필 정보 상단 배치 */}
+                    <Box display="flex" flexDirection="column" alignItems="center" sx={{ marginBottom: 3 }}>
+                        <Avatar
+                            alt="프로필 이미지"
+                            // 💡 [수정] DB 컬럼 PROFILE_IMG 사용
+                            src={user.PROFILE_IMG || "placeholder-image-url.jpg"} 
+                            sx={{ width: 100, height: 100, marginBottom: 2 }}
+                        />
+                        {/* 💡 [수정] USERNAME 또는 NICKNAME 사용 */}
+                        <Typography variant="h5">{user.NICKNAME || user.USERNAME}</Typography> 
+                        <Typography variant="body2" color="text.secondary">
+                             {/* 💡 [수정] USER_ID 사용 */}
+                            @{user.USER_ID}
+                        </Typography>
+                    </Box>
+                    
+                    <Grid container spacing={2} sx={{ marginTop: 2 }}>
+                        {/* 팔로워/팔로잉 필드는 SNS_USERS 테이블에 없지만, 서버에서 JOIN으로 가져온다고 가정 */}
+                        <Grid item xs={4} textAlign="center">
+                            <Typography variant="h6">팔로워</Typography>
+                            {/* 💡 [수정] DB 필드명에 맞춰 user.FOLLOWER_COUNT 등으로 변경 필요 (서버에서 정의된 필드 사용) */}
+                            <Typography variant="body1">{user.FOLLOWER_COUNT || 0}</Typography>
+                        </Grid>
+                        <Grid item xs={4} textAlign="center">
+                            <Typography variant="h6">팔로잉</Typography>
+                            {/* 💡 [수정] DB 필드명에 맞춰 user.FOLLOWING_COUNT 등으로 변경 필요 (서버에서 정의된 필드 사용) */}
+                            <Typography variant="body1">{user.FOLLOWING_COUNT || 0}</Typography>
+                        </Grid>
+                        <Grid item xs={4} textAlign="center">
+                            <Typography variant="h6">게시물</Typography>
+                            {/* 💡 [수정] POST_COUNT (이전 쿼리에서 정의한 필드명) 사용 */}
+                            <Typography variant="body1">{user.POST_COUNT || 0}</Typography>
+                        </Grid>
+                    </Grid>
+                    
+                    <Box sx={{ marginTop: 3 }}>
+                        <Typography variant="h6">내 소개</Typography>
+                        <Typography variant="body1">
+                            {/* 💡 [수정] DB 컬럼 BIO 사용 */}
+                            {user.BIO || '아직 작성된 소개글이 없습니다.'}
+                        </Typography>
+                    </Box>
+                </Paper>
+            </Box>
+        </Container>
+    );
 }
 
 export default MyPage;

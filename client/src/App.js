@@ -6,7 +6,8 @@ import Join from './components/Join'; // Join으로 변경
 import Feed from './components/Feed';
 import Register from './components/Register';
 import MyPage from './components/MyPage';
-import Menu from './components/Menu'; // Menu로 변경
+import Menu from './components/Menu'; 
+import Message from './components/messeger'; 
 
 function App() {
   const location = useLocation();
@@ -22,6 +23,7 @@ function App() {
           <Route path="/join" element={<Join />} />
           <Route path="/feed" element={<Feed />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/messeger" element={<Message />} />
           <Route path="/mypage" element={<MyPage />} />
         </Routes>
       </Box>

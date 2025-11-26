@@ -11,12 +11,13 @@ const jwt = require('jsonwebtoken');
 const JWT_KEY = "server_secret_key"; 
 
 router.post('/join', async (req, res) => {
-    let {userId, pwd, userName,nickName} = req.body;
+    let {userId, pwd, userName,nickName,bio} = req.body;
+    console.log("req.body ===>",req.body);
     try {
         const hashPwd = await bcrypt.hash(pwd, 10);
 
-        let sql = "INSERT INTO SNS_USERS (USER_ID, USERNAME, PASSWORD, NICKNAME, CREATED_AT) VALUES (?, ?, ?, ?, NOW())";
-        let result = await db.query(sql, [userId, userName, hashPwd,nickName]);
+        let sql = "INSERT INTO SNS_USERS (USER_ID, USERNAME, PASSWORD, NICKNAME, BIO, CREATED_AT) VALUES (?, ?, ?, ?, ?, NOW())";
+        let result = await db.query(sql, [userId, userName, hashPwd,nickName,bio]);
         
         res.json({
             msg: "success", 
@@ -74,8 +75,8 @@ router.post('/login', async (req, res) => {
                     userName : list[0].USERNAME,// 권한등 필요한 정보 추가 
                     status : "A" //일단 하드 코딩 db에 없어서
                 }
-                // *주의: JWT 토큰 생성 코드가 잘못되어 수정했습니다.
-                token = jwt.sign(user, JWT_KEY, {expiresIn : '1h'})
+                
+                token = jwt.sign(user, JWT_KEY, {expiresIn : '1h'});
             } else {
                 msg = "비밀번호를 확인해라";
             }
@@ -100,24 +101,9 @@ router.post('/login', async (req, res) => {
 router.get("/:userId", async (req, res) => {
     let {userId} = req.params;
     try {
-       // 1. 두개 쿼리 써서 리턴
-    //    let [list] = await db.query("SELECT * FROM TBL_USER WHERE USERID = ?", [userId]);
-    //    let [cnt] = await db.query("SELECT COUNT(*) FROM TBL_FEED WHERE USERID = ?", [userId]);
-    //    res.json({
-    //     user : list[0],
-    //     cnt : cnt[0]
-    //    }) 
-
-       // 2. 조인쿼리 만들어서 하나로 리턴
-        let sql = 
-            "SELECT U.*, IFNULL(T.CNT, 0) cnt " +
-            "FROM TBL_USER U " +
-            "LEFT JOIN ( " +
-            "    SELECT USERID, COUNT(*) CNT " +
-            "    FROM TBL_FEED " +
-            "    GROUP BY USERID " +
-            ") T ON U.USERID = T.USERID " +
-            "WHERE U.USERID = ?";
+ 
+       let sql = "SELECT *,U.USER_ID, IFNULL(T.CNT, 0) AS POST_COUNT FROM SNS_USERS U LEFT JOIN ( SELECT USER_ID, COUNT(*) AS CNT FROM SNS_POSTS GROUP BY USER_ID ) T ON U.USER_ID = T.USER_ID WHERE U.USER_ID = ?"
+    
 
         let [list] = await db.query(sql, [userId]);
         res.json({

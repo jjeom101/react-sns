@@ -5,6 +5,7 @@ const path = require('path');
 
 const userRouter = require("./routes/user");
 const feedRouter = require("./routes/feed");
+const chatRouter = require("./routes/chat");
 
 const app = express()
 app.use(cors({
@@ -21,6 +22,7 @@ app.use(express.json());
 
 app.use("/user", userRouter);
 app.use("/feed", feedRouter);
+app.use("/chat", chatRouter);
 
 
 app.listen(3010, ()=>{

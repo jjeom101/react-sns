@@ -8,6 +8,7 @@ function Join() {
   let nameRef = useRef();
   let nickRef = useRef();
   let passwordRef = useRef();
+  let bioRef = useRef();
 
   let navigate= useNavigate();
   function handleJoin() {
@@ -15,7 +16,8 @@ let param = {
         nickName : nickRef.current.value,
         pwd : passwordRef.current.value,
         userName : nameRef.current.value,
-        userId : idRef.current.value
+        userId : idRef.current.value,
+        bio : bioRef.current.value
     };
 
 
@@ -46,19 +48,27 @@ let param = {
         </Typography>
         <TextField  inputRef={idRef}  label="ID" variant="outlined" margin="normal" fullWidth />
         <TextField inputRef={passwordRef}
-          label="Password"
+          label="비밀번호"
           variant="outlined"
           margin="normal"
           fullWidth
           type="password"
         />
-        <TextField inputRef={nameRef} label="Username" variant="outlined" margin="normal" fullWidth />
-        <TextField inputRef={nickRef} label="Nickname" variant="outlined" margin="normal" fullWidth />
+          <TextField inputRef={bioRef}
+          label="자기소개"
+          variant="outlined"
+          margin="normal"
+          fullWidth
+          type="text"
+        />
+        
+        <TextField inputRef={nameRef} label="이름" variant="outlined" margin="normal" fullWidth />
+        <TextField inputRef={nickRef} label="닉네임" variant="outlined" margin="normal" fullWidth />
         <Button onClick={handleJoin} variant="contained" color="primary" fullWidth style={{ marginTop: '20px' }}>
             회원가입
         </Button>
         <Typography variant="body2" style={{ marginTop: '10px' }}>
-          이미 회원이라면? <Link to="/login">로그인</Link>
+          이미 회원이신가요? <Link to="/login">로그인</Link>
         </Typography>
       </Box>
     </Container>

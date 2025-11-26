@@ -53,7 +53,7 @@ router.get("/:userId", async (req, res) => {
     // console.log(`${req.protocol}://${req.get("host")}`);
     let { userId } = req.params;
     try {
-        let sql = "SELECT * FROM SNS_POSTS WHERE USER_ID = ? ";
+        let sql = "SELECT * FROM sns_posts F INNER JOIN SNS_MEDIA_FILES I ON F.POST_ID = I.POST_ID WHERE F.USER_ID =?";
         let [list] = await db.query(sql, [userId]);
         res.json({
             list,
@@ -68,7 +68,7 @@ router.get("/:userId", async (req, res) => {
 router.delete("/:POST_ID", authMiddleware, async (req, res) => {
     let { POST_ID } = req.params;
     try {
-        let sql = "DELETE FROM SNS_POSTS WHERE ID = ?";
+        let sql = "DELETE FROM SNS_POSTS WHERE POST_ID = ?";
         let result = await db.query(sql, [POST_ID]);
         res.json({
             result: result,
@@ -76,6 +76,7 @@ router.delete("/:POST_ID", authMiddleware, async (req, res) => {
         });
     } catch (error) {
         console.log("에러 발생!");
+        console.log(error);
     }
 })
 

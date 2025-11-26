@@ -1,6 +1,6 @@
 import React from 'react';
 import { Drawer, List, ListItem, ListItemText, Typography, Toolbar, ListItemIcon } from '@mui/material';
-import { Home, Add, AccountCircle } from '@mui/icons-material';
+import { Home, Add, AccountCircle,Message } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 
 function Menu() {
@@ -32,6 +32,12 @@ function Menu() {
             <Add />
           </ListItemIcon>
           <ListItemText primary="등록" />
+        </ListItem>
+            <ListItem button component={Link} to="/messeger">
+          <ListItemIcon>
+            <Message />
+          </ListItemIcon>
+          <ListItemText primary="메신저" />
         </ListItem>
         <ListItem button component={Link} to="/mypage">
           <ListItemIcon>

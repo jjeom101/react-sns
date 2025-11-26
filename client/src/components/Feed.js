@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Grid2,
+  Grid, // Grid2 대신 Grid 사용 (Grid2는 일반적으로 @mui/system에서 가져오지만, @mui/material Grid로 통일)
   AppBar,
   Toolbar,
   Typography,
@@ -33,27 +33,23 @@ function Feed() {
   const [newComment, setNewComment] = useState('');
   const [feeds, setFeeds] = useState([]);
 
-  // 💡 [추가] 토큰에서 추출한 userId를 상태로 관리
   const [userId, setUserId] = useState(null);
 
-  const navigate = useNavigate(); // 💡 [추가] useNavigate Hook 사용
+  const navigate = useNavigate();
 
-
-
+  // 1단계: 토큰 디코딩 및 userId 설정
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const decodedToken = jwtDecode(token);
-        // 백엔드에서 설정한 키 이름에 따라 'id'나 'userId' 사용
         const extractedId = decodedToken.userId || decodedToken.id;
 
         if (extractedId) {
-          setUserId(extractedId); // userId 상태 업데이트
+          setUserId(extractedId);
         } else {
           console.error("토큰에 사용자 ID 정보가 없습니다.");
           alert("토큰 정보 오류. 다시 로그인해주세요.");
-          console.log(extractedId);
           navigate('/login');
         }
       } catch (e) {
@@ -62,7 +58,6 @@ function Feed() {
         navigate('/login');
       }
     } else {
-      // 토큰이 없으면 로그인 페이지로 이동
       alert("로그인 후 이용해주세요");
       navigate("/login");
     }
@@ -73,15 +68,16 @@ function Feed() {
   // 2단계: 피드 정보 패치 함수 (userId 사용)
   // ----------------------------------------
   function fnFeeds() {
-    // 💡 [수정] 하드코딩 제거, 상태 userId 사용
     if (!userId) return;
 
-    fetch("http://localhost:3010/feed/" + userId)
+    // 💡 [수정] 서버 라우터가 'http://localhost:3010/feed/user01' 형태로 작동한다고 가정
+    fetch("http://localhost:3010/feed/" + userId) 
       .then(res => {
         if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
         return res.json();
       })
       .then(data => {
+        // data.list는 SNS_POSTS와 SNS_MEDIA_FILES가 JOIN된 결과라고 가정
         setFeeds(data.list || []);
         console.log(data);
       })
@@ -90,17 +86,18 @@ function Feed() {
       });
   }
 
-  // 💡 [수정] userId가 설정될 때마다 fnFeeds 호출 (의존성 배열 사용)
+  // userId가 설정될 때마다 fnFeeds 호출
   useEffect(() => {
     if (userId) {
       fnFeeds();
     }
-  }, [userId]) // userId가 변경될 때만 실행
+  }, [userId]) 
 
 
   const handleClickOpen = (feed) => {
     setSelectedFeed(feed);
     setOpen(true);
+    // 댓글 로직은 그대로 유지 (API 연동 필요)
     setComments([
       { id: 'user1', text: '멋진 사진이에요!' },
       { id: 'user2', text: '이 장소에 가보고 싶네요!' },
@@ -123,13 +120,14 @@ function Feed() {
   };
 
   // ----------------------------------------
-  // 3단계: 피드 삭제 기능 (함수로 분리 및 개선)
+  // 3단계: 피드 삭제 기능 (POST_ID 사용)
   // ----------------------------------------
   const handleDelete = () => {
     if (!selectedFeed) return;
 
-    // 피드 ID 추출
-    const feedIdToDelete = selectedFeed.id || selectedFeed.feedId;
+    // 💡 [수정] DB 스키마에 맞춰 POST_ID 사용
+    // 서버 응답이 POST_ID를 반환한다고 가정
+    const feedIdToDelete = selectedFeed.POST_ID; 
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -152,9 +150,9 @@ function Feed() {
         console.log(data);
         alert("삭제되었습니다!");
 
-        // 💡 [개선] setFeeds를 사용하여 UI 즉시 업데이트 (재패치 방지)
+        // 💡 [개선] UI 즉시 업데이트: POST_ID로 필터링
         setFeeds(prevFeeds =>
-          prevFeeds.filter(feed => (feed.id || feed.feedId) !== feedIdToDelete)
+          prevFeeds.filter(feed => feed.POST_ID !== feedIdToDelete)
         );
         handleClose();
       })
@@ -163,6 +161,7 @@ function Feed() {
         alert(`삭제 중 오류가 발생했습니다: ${error.message}`);
       });
   };
+  
   return (
     <Container maxWidth="md">
       <AppBar position="static">
@@ -172,32 +171,36 @@ function Feed() {
       </AppBar>
 
       <Box mt={4}>
-        <Grid2 container spacing={3}>
+        {/* Grid2 대신 @mui/material의 Grid 사용 */}
+        <Grid container spacing={3}> 
           {feeds && feeds.length > 0 ? feeds.map((feed) => (
-            <Grid2 xs={12} sm={6} md={4} key={feed.id}>
+            // 💡 [수정] key prop을 feed.POST_ID로 변경
+            <Grid item xs={12} sm={6} md={4} key={feed.POST_ID}>
               <Card>
                 <CardMedia
                   component="img"
                   height="200"
-                  image={feed.imgPath}
-                  alt={feed.imgName}
+                  // 💡 [수정] 이미지 URL을 FILE_URL로 변경
+                  image={feed.FILE_URL || 'placeholder-image-url.jpg'} 
+                  alt={feed.imgName || '게시물 이미지'}
                   onClick={() => handleClickOpen(feed)}
                   style={{ cursor: 'pointer' }}
                 />
                 <CardContent>
                   <Typography variant="body2" color="textSecondary">
-                    {feed.content}
+                    {feed.CONTENT} {/* 💡 [수정] DB 컬럼명에 맞춰 CONTENT 사용 (대문자 가정) */}
                   </Typography>
                 </CardContent>
               </Card>
-            </Grid2>
+            </Grid>
           )): <Typography variant="h6" sx={{ padding: 2 }}>로딩 중이거나 등록된 게시글이 없습니다.</Typography>}
-        </Grid2>
+        </Grid>
       </Box>
 
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg"> {/* 모달 크기 조정 */}
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
         <DialogTitle>
-          {selectedFeed?.title}
+          {/* 💡 [수정] selectedFeed?.title 대신 사용자 ID 또는 다른 제목 필드 사용 */}
+          {selectedFeed?.USER_ID}의 게시물
           <IconButton
             edge="end"
             color="inherit"
@@ -210,11 +213,11 @@ function Feed() {
         </DialogTitle>
         <DialogContent sx={{ display: 'flex' }}>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="body1">{selectedFeed?.content}</Typography>
-            {selectedFeed?.imgPath && (
+            <Typography variant="body1">{selectedFeed?.CONTENT}</Typography> {/* 💡 [수정] CONTENT 사용 */}
+            {selectedFeed?.FILE_URL && (
               <img
-                src={selectedFeed.imgPath}
-                alt={selectedFeed.imgName}
+                src={selectedFeed.FILE_URL} // 💡 [수정] FILE_URL 사용
+                alt={selectedFeed.FILE_NAME || '게시물 이미지'}
                 style={{ width: '100%', marginTop: '10px' }}
               />
             )}
@@ -224,11 +227,12 @@ function Feed() {
             <Typography variant="h6">댓글</Typography>
             <List>
               {comments.map((comment, index) => (
-                <ListItem key={index}>
+                // 💡 [개선] 목록 key prop을 index 대신 고유 ID(comment.id)로 사용
+                <ListItem key={comment.id || index}> 
                   <ListItemAvatar>
-                    <Avatar>{comment.id.charAt(0).toUpperCase()}</Avatar> {/* 아이디의 첫 글자를 아바타로 표시 */}
+                    <Avatar>{comment.id.charAt(0).toUpperCase()}</Avatar>
                   </ListItemAvatar>
-                  <ListItemText primary={comment.text} secondary={comment.id} /> {/* 아이디 표시 */}
+                  <ListItemText primary={comment.text} secondary={comment.id} />
                 </ListItem>
               ))}
             </List>
@@ -237,7 +241,7 @@ function Feed() {
               variant="outlined"
               fullWidth
               value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}           
+              onChange={(e) => setNewComment(e.target.value)}
             />
             <Button
               variant="contained"
@@ -250,7 +254,7 @@ function Feed() {
           </Box>
         </DialogContent>
         <DialogActions>
-           <Button onClick={handleDelete} color="blue" variant='contained'>
+           <Button onClick={handleDelete} color="error" variant='contained'> {/* 💡 [개선] 삭제 버튼은 error 색상 사용 권장 */}
             삭제
           </Button>
           <Button onClick={handleClose} color="primary">
