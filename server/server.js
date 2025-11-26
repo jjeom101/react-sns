@@ -9,6 +9,7 @@ const { Server } = require('socket.io');
 const userRouter = require("./routes/user");
 const feedRouter = require("./routes/feed");
 const chatRouter = require("./routes/chat");
+const followRouter = require("./routes/follow");
 
 const app = express()
 app.use(cors({
@@ -35,6 +36,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/user", userRouter);
 app.use("/feed", feedRouter);
 app.use("/chat", chatRouter);
+app.use("/follow", followRouter);
 
 const PORT = 3010;
 
