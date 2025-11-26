@@ -23,7 +23,7 @@ function App() {
           <Route path="/join" element={<Join />} />
           <Route path="/feed" element={<Feed />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/messeger" element={<Message />} />
+          <Route path="/messeger/:partnerId" element={<Message />} />
           <Route path="/mypage" element={<MyPage />} />
         </Routes>
       </Box>

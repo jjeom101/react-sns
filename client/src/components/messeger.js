@@ -14,7 +14,7 @@ const getConversationId = (id1, id2) => {
 
 function Messenger() {
     const navigate = useNavigate();
-    // const { partnerId } = useParams();
+    const { partnerId } = useParams();
     
     // 1. 상태 관리
     const [userId, setUserId] = useState(null); 
@@ -22,7 +22,7 @@ function Messenger() {
     const [input, setInput] = useState(''); 
     
 
-    const [partnerId, setPartnerId] = useState(null); 
+    // const  setPartnerId = useState(null); 
 
     const socketRef = useRef(null);
     const messagesEndRef = useRef(null); 
@@ -47,6 +47,7 @@ function Messenger() {
     
     useEffect(() => {
         const token = localStorage.getItem("token");
+        console.log("1. Stored Token:", token);
         if (!token) {
             alert("로그인 후 이용해주세요.");
             navigate("/login");
@@ -57,7 +58,8 @@ function Messenger() {
             const decoded = jwtDecode(token);
             const currentId = decoded.userId || decoded.id;
             setUserId(currentId);
-
+            console.log("2. Decoded User ID:", currentId);
+            console.log("3. Socket Query Params:", { token: token, currentId: currentId, partnerId: partnerId });
             socketRef.current = io(SOCKET_SERVER_URL, {
     query: { token: token, currentId: currentId, partnerId: partnerId } // 서버로 사용자 정보 전달
 });
@@ -87,7 +89,7 @@ function Messenger() {
                 socketRef.current.disconnect();
             }
         };
-    }, [navigate, partnerId]);
+    }, [navigate, partnerId, markAsRead]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -95,51 +97,61 @@ function Messenger() {
 
     
     function sendMessage(){
-        const currentSocket = socketRef.current;
-        const trimmedInput = input.trim();
-        const token = localStorage.getItem("token");
-        let messageData;
+    const currentSocket = socketRef.current;
+    const trimmedInput = input.trim();
+    const token = localStorage.getItem("token");
+    let messageData; 
 
-        if (trimmedInput && currentSocket && userId) {
-            const conversationId = getConversationId(userId, partnerId);
+    console.log("--- IF Condition Check ---");
+    console.log(`Input: ${!!trimmedInput}, Socket: ${!!currentSocket}, UserId: ${!!userId}, PartnerId: ${!!partnerId}`);
+    console.log(`Detail - partnerId value: ${partnerId}`);
+    console.log("--------------------------");
 
-             messageData = {
+    if (trimmedInput && currentSocket && userId && partnerId) {
+        const conversationId = getConversationId(userId, partnerId);
+        
+  
+        messageData = {
+            conversationId: conversationId,
+            senderId: userId,
+            receiverId: partnerId,
+            text: trimmedInput,
+            timestamp: new Date().toISOString()
+        };
+        
 
-                conversationId: conversationId,
-                senderId: userId,
-                receiverId: partnerId,
-                text: trimmedInput,
-                timestamp: new Date().toISOString()
-            };
-            //currentSocket 를 이용해서 실시간 전송
-            currentSocket.emit('sendMessage', messageData);
+        console.log("5. Message Data to Send:", messageData);
+        console.log("Final messageData:", messageData);
 
-            //바로 반응
-            setMessages((prevMessages) => [...prevMessages, messageData]);
-            setInput('');
 
-        }
-         fetch("http://localhost:3010/chat/message",{
-        method : "POST",
-        headers : {
-            "Content-type" : "application/json",
-            "Authorization": `Bearer ${token}`
-        },
-        body : JSON.stringify(messageData)
-    })
-    .then(res => res.json())
-    .then(data => {
-        // alert("저장되었습니다!");
-        if (data.result === 'success') {
-                console.log("메시지 DB 저장 성공");
-            } else {
-                console.error("메시지 DB 저장 실패:", data.msg);
-            }
-    })
-    .catch(error => {
-            console.error("메시지 저장 fetch 오류:", error);
-        });
-    }
+        // Socket.IO 실시간 전송
+        currentSocket.emit('sendMessage', messageData);
+
+
+        setMessages((prevMessages) => [...prevMessages, messageData]);
+        setInput('');
+
+        fetch("http://localhost:3010/chat/message",{
+            method : "POST",
+            headers : {
+                "Content-type" : "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body : JSON.stringify(messageData) 
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.result === 'success') {
+                    console.log("메시지 DB 저장 성공");
+                } else {
+                    console.error("메시지 DB 저장 실패:", data.msg);
+                }
+        })
+        .catch(error => {
+                console.error("메시지 저장 fetch 오류:", error);
+        });
+    }
+}
 
 
     return (
