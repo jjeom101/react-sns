@@ -123,7 +123,7 @@ router.get('/following/:userId', async (req, res) => {
         res.status(500).json({ msg: "서버 오류" });
     }
 });
-
+//test
 
 router.get('/followers/:userId', async (req, res) => {
     const { userId } = req.params;
