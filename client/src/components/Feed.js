@@ -64,20 +64,18 @@ function Feed() {
   }, [navigate]);
 
 
-  // ----------------------------------------
-  // 2단계: 피드 정보 패치 함수 (userId 사용)
-  // ----------------------------------------
+
   function fnFeeds() {
     if (!userId) return;
 
-    // 💡 [수정] 서버 라우터가 'http://localhost:3010/feed/user01' 형태로 작동한다고 가정
+
     fetch("http://localhost:3010/feed/" + userId) 
       .then(res => {
         if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
         return res.json();
       })
       .then(data => {
-        // data.list는 SNS_POSTS와 SNS_MEDIA_FILES가 JOIN된 결과라고 가정
+    
         setFeeds(data.list || []);
         console.log(data);
       })
@@ -86,7 +84,7 @@ function Feed() {
       });
   }
 
-  // userId가 설정될 때마다 fnFeeds 호출
+
   useEffect(() => {
     if (userId) {
       fnFeeds();
@@ -119,14 +117,9 @@ function Feed() {
     }
   };
 
-  // ----------------------------------------
-  // 3단계: 피드 삭제 기능 (POST_ID 사용)
-  // ----------------------------------------
   const handleDelete = () => {
     if (!selectedFeed) return;
 
-    // 💡 [수정] DB 스키마에 맞춰 POST_ID 사용
-    // 서버 응답이 POST_ID를 반환한다고 가정
     const feedIdToDelete = selectedFeed.POST_ID; 
     const token = localStorage.getItem("token");
 

@@ -9,6 +9,7 @@ import MyPage from './components/MyPage';
 import Menu from './components/Menu'; 
 import Message from './components/messeger'; 
 import Follow from './components/Follow'; 
+// import UserProfile from './components/UserProfile';
 
 function App() {
   const location = useLocation();
@@ -25,6 +26,7 @@ function App() {
           <Route path="/feed" element={<Feed />} />
           <Route path="/register" element={<Register />} />
           <Route path="/messeger/:partnerId" element={<Message />} />
+          <Route path="/user/:userId" element={<Follow />} />
           <Route path="/follow" element={<Follow />} />
           <Route path="/mypage" element={<MyPage />} />
         </Routes>

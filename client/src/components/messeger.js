@@ -5,8 +5,8 @@ import io from 'socket.io-client';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate ,useParams} from 'react-router-dom';
 
-const SOCKET_SERVER_URL = "http://localhost:3010"; 
-const CHAT_API_URL = "http://localhost:3010/chat";
+
+
 
 const getConversationId = (id1, id2) => {
     return [id1, id2].sort().join('_');
@@ -31,7 +31,7 @@ function Messenger() {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        fetch(`${CHAT_API_URL}/read`, {
+        fetch(`http://localhost:3010/chat/read`, {
             method: "PATCH",
             headers: { 
                 "Content-type": "application/json",
@@ -60,7 +60,7 @@ function Messenger() {
             setUserId(currentId);
             console.log("2. Decoded User ID:", currentId);
             console.log("3. Socket Query Params:", { token: token, currentId: currentId, partnerId: partnerId });
-            socketRef.current = io(SOCKET_SERVER_URL, {
+            socketRef.current = io("http://localhost:3010", {
     query: { token: token, currentId: currentId, partnerId: partnerId } // 서버로 사용자 정보 전달
 });
             const currentSocket = socketRef.current;
