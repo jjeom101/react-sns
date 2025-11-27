@@ -118,8 +118,69 @@ router.get("/:userId", async (req, res) => {
     }
 })
 
+router.get('/:userId/followers', async (req, res) => {
+    const { userId } = req.params;
+    
+    try {
+        // T1: 팔로워 ID 목록 조회 (현재 사용자(userId)를 팔로잉하고 있는 사람들)
+        let sql = `
+            SELECT 
+                T1.FOLLOWER_ID AS USER_ID,
+                U.NICKNAME,
+                U.PROFILE_IMG
+            FROM SNS_FOLLOWS T1
+            JOIN SNS_USERS U ON T1.FOLLOWER_ID = U.USER_ID
+            WHERE T1.FOLLOWING_ID = ?
+        `;
+        
+        let [list] = await db.query(sql, [userId]);
+        
+        res.json({
+            list: list,
+            count: list.length,
+            result: "success"
+        });
+        
+    } catch (error) {
+        console.error("팔로워 목록 조회 중 에러 발생:", error);
+        res.status(500).json({ 
+            msg: "fail", 
+            error: "팔로워 목록 조회 중 서버 오류가 발생했습니다." 
+        });
+    }
+});
 
-
+router.get('/:userId/followings', async (req, res) => {
+    const { userId } = req.params;
+    
+    try {
+        // T2: 팔로잉 ID 목록 조회 (현재 사용자(userId)가 팔로잉하고 있는 사람들)
+        let sql = `
+            SELECT 
+                T1.FOLLOWING_ID AS USER_ID,
+                U.NICKNAME,
+                U.PROFILE_IMG
+            FROM SNS_FOLLOWS T1
+            JOIN SNS_USERS U ON T1.FOLLOWING_ID = U.USER_ID
+            WHERE T1.FOLLOWER_ID = ?
+        `;
+        
+        let [list] = await db.query(sql, [userId]);
+        
+        res.json({
+            list: list,
+            count: list.length,
+            result: "success"
+        });
+        
+    } catch (error) {
+        console.error("팔로잉 목록 조회 중 에러 발생:", error);
+        res.status(500).json({ 
+            msg: "fail", 
+            error: "팔로잉 목록 조회 중 서버 오류가 발생했습니다." 
+        });
+    }
+});
 
 
 
