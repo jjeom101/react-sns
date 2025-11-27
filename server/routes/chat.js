@@ -4,50 +4,83 @@ const db = require("../db");
 const authMiddleware = require("../auth"); // JWT 인증 미들웨어
 
 
+
+router.post('/dm', async (req, res) => {
+    // 💡 실제 구현: const currentUserId = req.user.userId; // (인증 미들웨어를 통해 얻은 현재 사용자 ID)
+    // 💡 테스트용: 현재 사용자 ID와 대상 사용자 ID를 body로 받습니다.
+    const { currentUserId, targetUserId } = req.body;
+
+    if (!currentUserId || !targetUserId) {
+        return res.status(400).json({ msg: "fail", error: "사용자 ID 정보가 필요합니다." });
+    }
+
+
+    const userIds = [currentUserId, targetUserId].sort();
+
+    try {
+
+        let sql_check = `
+            SELECT T1.CONVERSATION_ID
+            FROM SNS_CONVERSATIONS T1
+            JOIN SNS_PARTICIPANTS P1 ON T1.CONVERSATION_ID = P1.CONVERSATION_ID
+            JOIN SNS_PARTICIPANTS P2 ON T1.CONVERSATION_ID = P2.CONVERSATION_ID
+            WHERE T1.TYPE = 'DM'
+            AND P1.USER_ID = ? AND P2.USER_ID = ?
+            LIMIT 1;
+        `;
+
+        let [existing] = await db.query(sql_check, [userIds[0], userIds[1]]);
+
+        let conversationId;
+
+        if (existing.length > 0) {
+
+            conversationId = existing[0].CONVERSATION_ID;
+
+        } else {
+
+
+
+            let sql_insert_conv = "INSERT INTO SNS_CONVERSATIONS (TYPE) VALUES ('DM')";
+            let result_conv = await db.query(sql_insert_conv);
+            conversationId = result_conv.insertId;
+
+
+            let sql_insert_part = "INSERT INTO SNS_PARTICIPANTS (CONVERSATION_ID, USER_ID) VALUES (?, ?), (?, ?)";
+            await db.query(sql_insert_part, [
+                conversationId, currentUserId,
+                conversationId, targetUserId
+            ]);
+        }
+
+        res.json({
+            msg: "success",
+            conversationId: conversationId
+        });
+
+    } catch (error) {
+        console.error("DM 대화방 처리 중 오류:", error);
+        res.status(500).json({ msg: "fail", error: "대화방 처리 중 서버 오류가 발생했습니다." });
+    }
+});
+
 router.post('/message', authMiddleware, async (req, res) => {
-    
-    console.log("--- New Message POST Request ---");
-    console.log("1-A. Authenticated User (req.user):", JSON.stringify(req.user)); 
-    console.log("1-B. Received Request Body:", JSON.stringify(req.body));
+
+ 
 
     const { conversationId, senderId, content, text } = req.body; 
     const messageContent = content || text; 
-    
-  
-    const authenticatedUserId = req.user && (req.user.userId || req.user.id || req.user.user_id);
-    
-    
-    if (!authenticatedUserId) { // req.user 객체는 있으나 userId 필드가 없거나, req.user가 없는 경우 처리
-        console.warn(`2-A. Auth Middleware Failed: Authenticated User ID is missing in req.user.`); 
-        return res.status(401).json({ result: 'fail', msg: '인증 토큰 처리 실패: 사용자 ID를 식별할 수 없습니다.' });
-    }
-    
-  
-    
-    if (!conversationId || !senderId || !messageContent) {
-        console.error("2-B. Validation Error: Required fields missing in body.");
-        
-        if (!messageContent) {
-            console.error("2-B-1. Missing field: messageContent (Client likely sent empty 'text').");
-        }
-
-        return res.status(400).json({ result: 'fail', msg: '필수 메시지 데이터(대화ID, 발신자ID, 내용)가 누락되었습니다.' });
-    }
-
-    if (authenticatedUserId !== senderId) {
-       console.warn(`2-C. Authorization mismatch: Token ID(${authenticatedUserId}) != Body SENDER ID(${senderId})`); 
-        return res.status(403).json({ result: 'fail', msg: '메시지 발신 권한이 없습니다.' });
-    }
+    console.log("conversationId ===>",conversationId);
 
     try {
-        console.log(`3. Executing DB Query: CONV_ID=${conversationId}, SENDER_ID=${senderId}`); 
         
-       
+
+
         let sql = "INSERT INTO SNS_MESSAGES (CONVERSATION_ID, SENDER_ID, CONTENT) VALUES (?, ?, ?)";
         const [dbResult] = await db.query(sql, [conversationId, senderId, messageContent]); 
-        
-        console.log("4. DB Query Success. Insert ID:", dbResult.insertId, "Affected Rows:", dbResult.affectedRows); 
-        
+
+       
+
         if (dbResult.affectedRows === 0) {
             console.error("4-B. DB Insert Failed: 0 affected rows.");
             return res.status(500).json({ result: 'fail', msg: '메시지 저장에 실패했습니다.' });
@@ -62,7 +95,7 @@ router.post('/message', authMiddleware, async (req, res) => {
         });
 
     } catch (error) {
-        console.error("5. CRITICAL ERROR (DB/Server):", error.stack); 
+      
         res.status(500).json({ result: 'fail', msg: '서버 오류' });
     }
 });
@@ -93,21 +126,103 @@ router.patch('/read', authMiddleware, async (req, res) => {
 
 
 router.get('/list', authMiddleware, async (req, res) => {
-    const userId = req.userId; // authMiddleware에서 userId를 추출했다고 가정
-
+    // req.user에서 currentUserId를 안전하게 추출
+    const currentUserId = req.user && (req.user.userId || req.user.id || req.user.user_id || req.userId);
+    
+    if (!currentUserId) {
+        return res.status(401).json({ result: 'fail', msg: '인증 정보가 유효하지 않습니다.' });
+    }
+    
+    console.log(`[Chat List] 현재 조회 사용자 ID: ${currentUserId}`);
     try {
-        // (쿼리 예시: JOIN을 통해 채팅방 정보와 마지막 메시지를 가져와야 합니다.)
-        const [rows] = await db.query(
-            `SELECT * FROM SNS_PARTICIPANTS WHERE USER_ID = ?`,
-            [userId]
-        );
+     const sql = `
+            SELECT
+                T1.CONVERSATION_ID,
+                T1.TYPE,
+                P2.USER_ID AS partnerId,
+                U.USERNAME AS partnerName,
+                P1.LAST_READ_AT,
+                NULL AS lastMessage,
+                0 AS unreadCount
+            FROM SNS_CONVERSATIONS T1
+            
+            -- P1: 현재 로그인한 나의 참여 정보
+            JOIN SNS_PARTICIPANTS P1 ON T1.CONVERSATION_ID = P1.CONVERSATION_ID
+            
+            -- P2: 상대방의 참여 정보 (나를 제외한 다른 1인)
+            JOIN SNS_PARTICIPANTS P2 ON T1.CONVERSATION_ID = P2.CONVERSATION_ID
+            
+            -- U: 상대방의 사용자 정보
+            JOIN SNS_USERS U ON P2.USER_ID = U.USER_ID
+            
+            WHERE P1.USER_ID = ?    -- 내가 참여한 대화방
+              AND P2.USER_ID != ?   -- 나 자신이 아닌 상대방
+              AND T1.TYPE = 'DM'
+              
+            -- 💡 T1.CREATED_AT으로 정렬합니다. (테이블에 이 컬럼이 존재해야 함)
+            ORDER BY T1.CREATED_AT DESC; 
+        `;
 
-        res.json({ result: 'success', chats: rows });
+        // 쿼리에 currentUserId를 두 번 전달
+        const [rows] = await db.query(sql, [currentUserId, currentUserId]);
+
+        // 프론트엔드에서 기대하는 chats 배열로 바로 반환
+        res.json({ result: 'success', chats: rows }); 
+        
     } catch (error) {
         console.error("채팅방 목록 조회 오류:", error);
         res.status(500).json({ result: 'fail', msg: '서버 오류' });
     }
 });
+
+
+router.get('/messages/:conversationId', authMiddleware, async (req, res) => {
+    
+    const currentUserId = req.user && (req.user.userId || req.user.id || req.user.user_id || req.userId);
+    const conversationId = parseInt(req.params.conversationId, 10);
+
+    if (isNaN(conversationId) || !currentUserId) {
+        return res.status(400).json({ result: 'fail', msg: '유효하지 않은 요청입니다.' });
+    }
+    
+    console.log(`[History] 대화 기록 조회 요청: ConvID=${conversationId}`);
+
+    try {
+      
+        const partnerSql = `
+            SELECT U.USERNAME 
+            FROM SNS_PARTICIPANTS P
+            JOIN SNS_USERS U ON P.USER_ID = U.USER_ID
+            WHERE P.CONVERSATION_ID = ? AND P.USER_ID != ? LIMIT 1;
+        `;
+        const [partnerRows] = await db.query(partnerSql, [conversationId, currentUserId]);
+        const partnerName = partnerRows.length > 0 ? partnerRows[0].USERNAME : '알 수 없음';
+
+
+      
+        const sql = `
+            SELECT T1.MESSAGE_ID, T1.CONVERSATION_ID, T1.SENDER_ID, T1.CONTENT, T1.CREATED_AT 
+            FROM SNS_MESSAGES T1
+            WHERE T1.CONVERSATION_ID = ?
+            ORDER BY T1.CREATED_AT ASC;
+        `;
+        const [messages] = await db.query(sql, [conversationId]);
+        
+        
+        res.json({ 
+            result: 'success', 
+            messages: messages,
+            partnerName: partnerName 
+        });
+
+    } catch (error) {
+        console.error("채팅 기록 조회 오류:", error);
+        res.status(500).json({ result: 'fail', msg: '서버 오류' });
+    }
+});
+
+
+
 
 
 module.exports = router;

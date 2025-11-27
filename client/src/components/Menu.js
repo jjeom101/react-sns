@@ -33,7 +33,7 @@ function Menu() {
           </ListItemIcon>
           <ListItemText primary="등록" />
         </ListItem>
-            <ListItem button component={Link} to="/messeger">
+            <ListItem button component={Link} to="/chat">
           <ListItemIcon>
             <Message />
           </ListItemIcon>

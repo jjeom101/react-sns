@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route, Routes, useLocation } from 'react-router-dom';
+import { Route, Routes, useLocation,Navigate } from 'react-router-dom';
 import { Box, CssBaseline } from '@mui/material';
 import Login from './components/Login';
 import Join from './components/Join'; // Join으로 변경
@@ -9,6 +9,14 @@ import MyPage from './components/MyPage';
 import Menu from './components/Menu'; 
 import Message from './components/messeger'; 
 import Follow from './components/Follow'; 
+import ChatList from './components/ChatList';
+import chat from './components/chat';
+
+
+
+
+
+
 // import UserProfile from './components/UserProfile';
 
 function App() {
@@ -26,6 +34,13 @@ function App() {
           <Route path="/feed" element={<Feed />} />
           <Route path="/register" element={<Register />} />
           <Route path="/messeger/:partnerId" element={<Message />} />
+          
+          <Route path="/chat/list" element={<ChatList />} />
+          <Route path="/chat/:conversationId" element={<chat />} />
+          
+
+          <Route path="/chat" element={<Navigate to="/chat/list" replace />} />
+
           <Route path="/user/:userId" element={<Follow />} />
           <Route path="/follow" element={<Follow />} />
           <Route path="/mypage" element={<MyPage />} />
