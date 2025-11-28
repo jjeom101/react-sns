@@ -56,7 +56,7 @@ function Login() {
           로그인
         </Button>
         <Typography variant="body2" style={{ marginTop: '10px' }}>
-          회원아니셈 ? <Link to="/join">회원가입</Link>
+          회원이 아니신가요 ? <Link to="/join">회원가입</Link>
         </Typography>
       </Box>
     </Container>

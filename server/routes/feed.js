@@ -49,21 +49,21 @@ router.post('/upload', upload.array('file'), async (req, res) => {
 });
 
 
-router.get("/:userId", async (req, res) => {
-    // console.log(`${req.protocol}://${req.get("host")}`);
-    let { userId } = req.params;
-    try {
-        let sql = "SELECT * FROM sns_posts F INNER JOIN SNS_MEDIA_FILES I ON F.POST_ID = I.POST_ID WHERE F.USER_ID =?";
-        let [list] = await db.query(sql, [userId]);
-        res.json({
-            list,
-            result: "success"
-        })
+// router.get("/:userId", async (req, res) => {
+//     // console.log(`${req.protocol}://${req.get("host")}`);
+//     let { userId } = req.params;
+//     try {
+//         let sql = "SELECT * FROM sns_posts F INNER JOIN SNS_MEDIA_FILES I ON F.POST_ID = I.POST_ID WHERE F.USER_ID =?";
+//         let [list] = await db.query(sql, [userId]);
+//         res.json({
+//             list,
+//             result: "success"
+//         })
 
-    } catch (error) {
-        console.log(error);
-    }
-})
+//     } catch (error) {
+//         console.log(error);
+//     }
+// })
 
 router.delete("/:POST_ID", authMiddleware, async (req, res) => {
     let { POST_ID } = req.params;
@@ -183,58 +183,51 @@ router.get("/comments/:postId", async (req, res) => {
     }
 });
 
-router.get("/:currentUserId", authMiddleware, async (req, res) => {
-    const currentUserId = req.params.currentUserId; 
+router.get("/all", authMiddleware, async (req, res) => {
+    // URL 파라미터 대신 토큰에 담긴 사용자 ID를 사용합니다.
+    const currentUserId = req.user && (req.user.userId || req.user.id || req.user.user_id); 
+    console.log("인증된 Current User ID:", currentUserId);
+    if (!currentUserId) {
+        return res.status(401).json({ msg: "인증 정보가 유효하지 않습니다." });
+    }
 
-    if (!currentUserId) {
-        return res.status(400).json({ msg: "사용자 ID가 필요합니다." });
-    }
+    try {
+ const sql = `
+SELECT
+    P.POST_ID,
+    P.USER_ID,
+    P.CONTENT,
+    P.CREATED_AT,
+    U.USERNAME,
+    U.PROFILE_IMG AS PROFILE_IMAGE_URL,
+    MF.FILE_URL,
+    IFNULL(COUNT(L.LIKE_ID), 0) AS like_count,
+    MAX(CASE WHEN L.USER_ID = ? THEN 1 ELSE 0 END) AS is_liked 
+FROM SNS_POSTS P
+JOIN SNS_USERS U ON P.USER_ID = U.USER_ID
+LEFT JOIN SNS_MEDIA_FILES MF ON P.POST_ID = MF.POST_ID AND MF.DISPLAY_ORDER = 1
+LEFT JOIN SNS_LIKES L ON P.POST_ID = L.POST_ID /* <--- 이 줄 끝에 공백 문자 ' '가 없어야 합니다 */
+GROUP BY 
+    P.POST_ID, P.USER_ID, P.CONTENT, P.CREATED_AT, 
+    U.USERNAME, U.PROFILE_IMG, MF.FILE_URL
+ORDER BY P.CREATED_AT DESC;
+`.trim();
+        
+        // currentUserId를 SQL 쿼리 매개변수에 바인딩하여 is_liked 값을 계산합니다.
+        const [list] = await db.query(sql, [currentUserId]); 
+        console.log("=== [SERVER] DB 쿼리 결과 확인 ===");
+        if (list && list.length > 0) {
+            console.log("첫 번째 게시물 데이터 (필드 이름 확인):", list[0]);
+        } else {
+            console.log("DB에서 로드된 게시물이 없습니다.");
+        }
+        console.log("=====================================");
 
-    try {
-        const sql = `
-            SELECT
-                P.POST_ID,
-                P.USER_ID,
-                P.CONTENT,
-                P.CREATED_AT,
-                U.USERNAME,
-                U.PROFILE_IMG AS PROFILE_IMAGE_URL,
-                MF.FILE_URL,
-                
-                COUNT(L.LIKE_ID) AS LIKE_COUNT,
-                
-                MAX(CASE WHEN L.USER_ID = ? THEN 1 ELSE 0 END) AS IS_LIKED 
-                
-            FROM SNS_POSTS P
-            JOIN SNS_USERS U ON P.USER_ID = U.USER_ID
-            LEFT JOIN SNS_MEDIA_FILES MF ON P.POST_ID = MF.POST_ID AND MF.DISPLAY_ORDER = 1
-            LEFT JOIN SNS_LIKES L ON P.POST_ID = L.POST_ID  
-            
-            GROUP BY 
-                P.POST_ID, 
-                P.USER_ID, 
-                P.CONTENT, 
-                P.CREATED_AT, 
-                U.USERNAME, 
-                U.PROFILE_IMG, 
-                MF.FILE_URL
-            ORDER BY P.CREATED_AT DESC;
-        `;
-        
-        const [list] = await db.query(sql, [currentUserId]); 
-        console.log("=== [SERVER] DB 쿼리 결과 확인 ===");
-        if (list && list.length > 0) {
-            console.log("첫 번째 게시물 데이터 (필드 이름 확인):", list[0]);
-        } else {
-            console.log("DB에서 로드된 게시물이 없습니다.");
-        }
-        console.log("=====================================");
-
-        res.json({ msg: "success", list: list });
-    } catch (error) {
-        console.error("피드 조회 오류:", error);
-        res.status(500).json({ msg: "피드 조회 실패", error: error.message });
-    }
+        res.json({ msg: "success", list: list });
+    } catch (error) {
+        console.error("피드 조회 오류:", error);
+        res.status(500).json({ msg: "피드 조회 실패", error: error.message });
+    }
 });
 
 router.post("/like", authMiddleware, async (req, res) => {
@@ -302,6 +295,9 @@ router.post("/like", authMiddleware, async (req, res) => {
         res.status(500).json({ msg: "좋아요 처리 실패", error: error.message });
     }
 });
+
+
+
 
 
 module.exports = router;

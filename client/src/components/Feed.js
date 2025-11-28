@@ -63,20 +63,24 @@ function Feed() {
 
   function fnFeeds() {
     if (!userId) return;
-
-    fetch("http://localhost:3010/feed/" + userId)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-        return res.json();
-      })
+    const token = localStorage.getItem("token");
+   fetch("http://localhost:3010/feed/all", {
+        method: "GET",
+        headers: {
+           
+            "Authorization": `Bearer ${token}` 
+        }
+        })
+      .then(res => res.json())
       .then(data => {
+        console.log("서버에서 받은 데이터:", data);
         setFeeds(data.list || []);
         if (data.list && data.list.length > 0) {
           data.list.forEach((feed, index) => {
             console.log(`게시물 #${index + 1} (POST_ID: ${feed.POST_ID}):`);
 
-            // 🚨 LIKE_COUNT -> like_count로 수정되었는지 확인하세요.
-            console.log(`- 좋아요 갯수 (LIKE_COUNT): ${feed.like_count}`);
+            // 🚨 like_count -> like_count로 수정되었는지 확인하세요.
+            console.log(`- 좋아요 갯수 (like_count): ${feed.like_count}`);
 
             // 🚨 IS_LIKED -> is_liked로 수정되었는지 확인하세요.
             console.log(`- 현재 사용자 좋아요 여부 (IS_LIKED): ${feed.is_liked}`);
@@ -123,8 +127,8 @@ function Feed() {
         if (feed.POST_ID === postId) {
           return {
             ...feed,
-            IS_LIKED: result.liked,
-            LIKE_COUNT: result.likeCount
+            is_liked: result.liked,    
+            like_count: result.likeCount
           };
         }
         return feed;
@@ -302,14 +306,14 @@ function Feed() {
 
                   <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 1.5, borderTop: '1px solid #eee', pt: 1 }}>
                     <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleLike(feed.POST_ID); }}>
-                      {feed.IS_LIKED ? <FavoriteIcon fontSize="small" color="error" /> : <FavoriteBorderIcon fontSize="small" />}
-                      <Typography variant="caption" sx={{ ml: 0.5, color: 'text.secondary' }}>{feed.LIKE_COUNT || 0}</Typography>
+                      {feed.is_liked ? <FavoriteIcon fontSize="small" color="error" /> : <FavoriteBorderIcon fontSize="small" />}
+                      <Typography variant="caption" sx={{ ml: 0.5, color: 'text.secondary' }}>{feed.like_count || 0}</Typography>
                     </IconButton>
                     <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleRetweet(feed.POST_ID); }} sx={{ ml: 1 }}>
                       <RepeatIcon fontSize="small" />
                       <Typography variant="caption" sx={{ ml: 0.5, color: 'text.secondary' }}>
 
-                        {feed.LIKE_COUNT || 0}
+                        {feed.like_count|| 0}
                       </Typography>
                     </IconButton>
                   </Box>
