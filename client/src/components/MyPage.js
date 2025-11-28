@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect ,useCallback} from 'react';
 import { Container, Typography, Box, Avatar, Grid, Paper } from '@mui/material';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
 import FollowListModal from './FollowListModal';
+import ProfileEditModal from './ProfileEditModal';
 
 function MyPage() {
   
     let [user, setUser] = useState(null); 
     let navigate = useNavigate();
+
+    let [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     let [isModalOpen, setIsModalOpen] = useState(false); 
     let [listType, setListType] = useState('followers'); 
@@ -55,7 +58,7 @@ function MyPage() {
     }
 
     function fnGetFollowList(type, userId) {
-        setListData([]); // 새 목록을 로드하기 전에 초기화
+        setListData([]);
         const endpoint = `http://localhost:3010/user/${userId}/${type}`; 
 
         fetch(endpoint)
@@ -65,7 +68,7 @@ function MyPage() {
             })
             .then(data => {
                 console.log(`${type} 목록 데이터:`, data);
-                // 서버 응답 구조에 따라 적절한 데이터를 listData에 설정
+              
                 setListData(data.list || data); 
             })
             .catch(error => {
@@ -75,21 +78,60 @@ function MyPage() {
     }
 
     function handleListClick(type) {
-        if (!user || !user.USER_ID) return; // 사용자 정보 없으면 실행 안 함
+        if (!user || !user.USER_ID) return; 
         
         const listName = type === 'followers' ? '팔로워' : '팔로잉';
         
-        // 데이터가 0인 경우 모달을 열지 않고 사용자에게 알림
+       
         if ((type === 'followers' && (user.FOLLOWER_COUNT || 0) === 0) || 
             (type === 'followings' && (user.FOLLOWING_COUNT || 0) === 0)) {
             alert(`${user.NICKNAME || user.USERNAME}님의 ${listName} 목록이 비어있습니다.`);
             return;
         }
 
-        setListType(type); // 어떤 목록을 요청할지 설정
-        setIsModalOpen(true); // 모달 열기
-        fnGetFollowList(type, user.USER_ID); // 해당 목록 데이터 요청
+        setListType(type); 
+        setIsModalOpen(true); 
+        fnGetFollowList(type, user.USER_ID); 
     }
+
+  
+
+
+    const handleImageUpload = useCallback(async (file) => {
+        if (!user || !user.USER_ID) return;
+        
+        setIsProfileModalOpen(false); 
+        
+        const formData = new FormData();
+        formData.append('profileImage', file);
+        formData.append('userId', user.USER_ID); 
+        
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch("http://localhost:3010/user/profile/image", { 
+                method: 'POST',
+                headers: {
+              
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error("이미지 업로드에 실패했습니다.");
+            }
+
+            const data = await response.json();
+            alert("프로필 사진이 성공적으로 업데이트되었습니다.");
+            
+         
+            fnGetUser(); 
+
+        } catch (error) {
+            console.error("프로필 사진 업로드 오류:", error);
+            alert(`업로드 오류: ${error.message}`);
+        }
+    }, [user, fnGetUser]);
 
     useEffect(()=>{
         fnGetUser();
@@ -118,12 +160,21 @@ function MyPage() {
                     
                  
                     <Box display="flex" flexDirection="column" alignItems="center" sx={{ marginBottom: 3 }}>
-                        <Avatar
-                            alt="프로필 이미지"
-                          
-                            src={user.PROFILE_IMG || "placeholder-image-url.jpg"} 
-                            sx={{ width: 100, height: 100, marginBottom: 2 }}
-                        />
+                       <Avatar
+                            alt="프로필 이미지"
+                           
+                            src={user.PROFILE_IMG 
+                                ? `http://localhost:3010${user.PROFILE_IMG}`
+                                : "placeholder-image-url.jpg"} 
+                            sx={{ 
+                                width: 100, 
+                                height: 100, 
+                                marginBottom: 2,
+                                cursor: 'pointer', 
+                                '&:hover': { opacity: 0.8 } 
+                            }}
+                            onClick={() => setIsProfileModalOpen(true)}
+                        />
                    
                         <Typography variant="h5">{user.NICKNAME || user.USERNAME}</Typography> 
                         <Typography variant="body2" color="text.secondary">
@@ -167,6 +218,12 @@ function MyPage() {
                 onClose={() => setIsModalOpen(false)}
                 title={listType === 'followers' ? '팔로워 목록' : '팔로잉 목록'}
                 list={listData}
+            />
+            <ProfileEditModal
+                isOpen={isProfileModalOpen}
+                onClose={() => setIsProfileModalOpen(false)}
+                userProfileImg={user.PROFILE_IMG}
+                onImageUpload={handleImageUpload}
             />
         </Container>
     );

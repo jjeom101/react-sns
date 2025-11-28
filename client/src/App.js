@@ -10,7 +10,8 @@ import Menu from './components/Menu';
 import Message from './components/messeger'; 
 import Follow from './components/Follow'; 
 import ChatList from './components/ChatList';
-import chat from './components/chat';
+import ShortsFeed from './components/ShortsFeed';
+
 
 
 
@@ -36,7 +37,8 @@ function App() {
           <Route path="/messeger/:partnerId" element={<Message />} />
           
           <Route path="/chat/list" element={<ChatList />} />
-          <Route path="/chat/:conversationId" element={<chat />} />
+          <Route path="/ShortsFeed" element={<ShortsFeed />} />
+          
           
 
           <Route path="/chat" element={<Navigate to="/chat/list" replace />} />

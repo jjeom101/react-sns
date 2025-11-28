@@ -1,0 +1,107 @@
+.feed-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    background-color: #FFFFFF;
+    color: #212121;
+}
+
+.MuiAppBar-root {
+    background-color: #FF6F00 !important;
+}
+
+.MuiCard-root {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    transition: transform 0.3s ease-in-out;
+    border: 1px solid #FFD54F;
+}
+
+.MuiCard-root:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.MuiCardHeader-root {
+    padding-bottom: 8px;
+    background-color: #fffaf0;
+}
+
+.MuiCardMedia-img {
+    cursor: pointer;
+    object-fit: cover;
+    max-height: 400px;
+}
+
+.MuiCardContent-root > .MuiBox-root:first-of-type {
+    border-top: 1px solid #37474F33;
+}
+
+.MuiIconButton-root .MuiSvgIcon-root.Mui-error {
+    color: #FF6F00 !important;
+}
+
+.MuiIconButton-root .MuiSvgIcon-root[data-testid="RepeatIcon"] {
+    color: #37474F;
+}
+
+.MuiIconButton-root .MuiSvgIcon-root.Mui-success {
+    color: #37474F !important;
+}
+
+.MuiCardContent-root > .MuiBox-root:last-of-type .MuiButton-containedPrimary {
+    background-color: #FF6F00;
+}
+
+.MuiCardContent-root > .MuiBox-root:last-of-type .MuiButton-containedPrimary:hover {
+    background-color: #e06000;
+}
+
+.MuiDialog-paper {
+    border: 2px solid #FFD54F;
+}
+
+.MuiDialogTitle-root {
+    background-color: #FF6F00;
+    color: #FFFFFF;
+}
+
+.MuiDialogActions-root .MuiButton-containedError {
+    background-color: #37474F;
+}
+
+.MuiDialogActions-root .MuiButton-containedError:hover {
+    background-color: #263238;
+}
+
+.MuiDialogContent-root > .MuiBox-root:last-child {
+    background-color: #f7f9f9;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.MuiButton-containedPrimary {
+    background-color: #FF6F00 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 3px 5px rgba(255, 111, 0, 0.3);
+}
+
+.MuiButton-containedPrimary:hover {
+    background-color: #e06000 !important;
+}
+
+.MuiPaper-root.MuiPaper-elevation3 {
+    border: 1px solid #FFD54F;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.MuiListItem-root {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.MuiListItem-root:hover {
+    background-color: #fff8e1;
+}

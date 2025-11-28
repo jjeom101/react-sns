@@ -29,6 +29,7 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
+import './Feed.css';
 
 function Feed() {
   const [open, setOpen] = useState(false);
@@ -298,167 +299,176 @@ function Feed() {
   };
 
   return (
-    <Container maxWidth="md">
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6">SNS</Typography>
-        </Toolbar>
-      </AppBar>
+    <Container maxWidth="md" className="feed-container">
+      <Container maxWidth="md">
+        <AppBar position="static">
+          <Toolbar>
+            <Typography variant="h6">SNS</Typography>
+          </Toolbar>
+        </AppBar>
 
-      <Box mt={4}>
-        <Grid container spacing={3}>
-          {feeds && feeds.length > 0 ? feeds.map((feed) => (
-            <Grid
-              item
-              xs={12}
-              key={feed.POST_ID}
-            >
-              <Card sx={{ maxWidth: '100%', mb: 2 }}>
-                <CardHeader
-                  avatar={
-                    <Avatar
-                      src={feed.PROFILE_IMAGE_URL || '/default-avatar.png'}
-                      aria-label="profile-image"
-                    />
-                  }
-                  title={feed.USERNAME || `사용자 ID: ${feed.USER_ID}`}
-                  subheader={feed.CREATED_AT ? new Date(feed.CREATED_AT).toLocaleString() : ''}
-                />
-
-                <CardMedia
-                  component="img"
-                  height="400"
-                  image={feed.FILE_URL || 'placeholder-image-url.jpg'}
-                  alt={feed.imgName || '게시물 이미지'}
-                  onClick={() => handleClickOpen(feed)}
-                  style={{ cursor: 'pointer', objectFit: 'cover' }}
-                />
-                <CardContent>
-                  <Typography variant="body1" component="p" sx={{ mb: 1 }}>
-                    {feed.CONTENT}
-                  </Typography>
-
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 1.5, borderTop: '1px solid #eee', pt: 1 }}>
-
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleLike(feed.POST_ID); }}>
-                      {feed.is_liked ? <FavoriteIcon fontSize="small" color="error" /> : <FavoriteBorderIcon fontSize="small" />}
-                      <Typography variant="caption" sx={{ ml: 0.5, color: 'text.secondary' }}>{feed.like_count || 0}</Typography>
-                    </IconButton>
-
-                    <IconButton size="small"onClick={(e) => { e.stopPropagation(); handleRetweet(feed.POST_ID); }}sx={{ ml: 0.5 }}>
-                      <RepeatIcon fontSize="small" color={feed.is_retweeted ? "success" : "action"} />
-                      <Typography variant="caption" sx={{ ml: 0.1, color: 'text.secondary' }}>{feed.retweet_count || 0}</Typography>
-                    </IconButton>
-
-                  </Box>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                    <TextField
-                      label="댓글을 입력하세요"
-                      variant="outlined"
-                      size="small"
-                      fullWidth
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddComment(feed.POST_ID);
+        <Box mt={4}>
+          <Grid container spacing={3}>
+            {feeds && feeds.length > 0 ? feeds.map((feed) => (
+              <Grid
+                item
+                xs={12}
+                key={feed.POST_ID}
+              >
+                <Card sx={{ maxWidth: '100%', mb: 2 }}>
+                  <CardHeader
+                    avatar={
+                      <Avatar
+                        src={feed.PROFILE_IMAGE_URL
+                          ? `http://localhost:3010${feed.PROFILE_IMAGE_URL}` // ⭐️ 서버 주소 추가
+                          : '/default-avatar.png'
                         }
-                      }}
-                      sx={{ mr: 1 }}
-                    />
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => handleAddComment(feed.POST_ID)}
-                    >
-                      작성
-                    </Button>
-                  </Box>
+                        aria-label="profile-image"
+                      />
+                    }
+                    title={feed.USERNAME || `사용자 ID: ${feed.USER_ID}`}
+                    subheader={feed.CREATED_AT ? new Date(feed.CREATED_AT).toLocaleString() : ''}
+                  />
 
-                  {(feed.FIRST_COMMENT_CONTENT && feed.FIRST_COMMENT_USERNAME) && (
-                    <Box sx={{
-                      bgcolor: '#f9f9f9',
-                      p: 1,
-                      borderRadius: '4px',
-                      borderLeft: '3px solid #1976d2',
-                      mt: 1
-                    }}>
-                      <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
-                        {feed.FIRST_COMMENT_USERNAME}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary" noWrap>
-                        {feed.FIRST_COMMENT_CONTENT}
-                      </Typography>
+                  <CardMedia
+                    component="img"
+                    height="400"
+                    image={feed.FILE_URL || 'placeholder-image-url.jpg'}
+                    alt={feed.imgName || '게시물 이미지'}
+                    onClick={() => handleClickOpen(feed)}
+                    style={{ cursor: 'pointer', objectFit: 'cover' }}
+                  />
+                  <CardContent>
+                    <Typography variant="body1" component="p" sx={{ mb: 1 }}>
+                      {feed.CONTENT}
+                    </Typography>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 1.5, borderTop: '1px solid #eee', pt: 1 }}>
+
+                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleLike(feed.POST_ID); }}>
+                        {feed.is_liked ? <FavoriteIcon fontSize="small" color="error" /> : <FavoriteBorderIcon fontSize="small" />}
+                        <Typography variant="caption" sx={{ ml: 0.5, color: 'text.secondary' }}>{feed.like_count || 0}</Typography>
+                      </IconButton>
+
+                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleRetweet(feed.POST_ID); }} sx={{ ml: 0.5 }}>
+                        <RepeatIcon fontSize="small" color={feed.is_retweeted ? "success" : "action"} />
+                        <Typography variant="caption" sx={{ ml: 0.1, color: 'text.secondary' }}>{feed.retweet_count || 0}</Typography>
+                      </IconButton>
+
                     </Box>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-          )) : <Typography variant="h6" sx={{ padding: 2 }}>로딩 중이거나 등록된 게시글이 없습니다.</Typography>}
-        </Grid>
-      </Box>
 
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
-        <DialogTitle>
-          {selectedFeed?.USERNAME || selectedFeed?.USER_ID}의 게시물
-          <IconButton
-            edge="end"
-            color="inherit"
-            onClick={handleClose}
-            aria-label="close"
-            sx={{ position: 'absolute', right: 8, top: 8 }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ display: 'flex' }}>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="body1">{selectedFeed?.CONTENT}</Typography>
-            {selectedFeed?.FILE_URL && (
-              <img
-                src={selectedFeed.FILE_URL}
-                alt={selectedFeed.FILE_NAME || '게시물 이미지'}
-                style={{ width: '100%', marginTop: '10px' }}
-              />
-            )}
-          </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+                      <TextField
+                        label="댓글을 입력하세요"
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddComment(feed.POST_ID);
+                          }
+                        }}
+                        sx={{ mr: 1 }}
+                      />
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleAddComment(feed.POST_ID)}
+                      >
+                        작성
+                      </Button>
+                    </Box>
 
-          <Box sx={{ width: '300px', marginLeft: '20px' }}>
-            <Typography variant="h6">댓글</Typography>
-            <List>
-              {comments.length > 0 ? (
-                comments.map((comment) => (
-                  <ListItem key={comment.COMMENT_ID || comment.id}>
-                    <ListItemAvatar>
-                      <Avatar src={comment.PROFILE_IMAGE_URL || '/default-avatar.png'}>
-                        {(comment.USERNAME || comment.USER_ID)?.charAt(0)?.toUpperCase() || 'U'}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={comment.CONTENT}
-                      secondary={comment.USERNAME || comment.USER_ID}
-                    />
-                  </ListItem>
-                ))
-              ) : (
-                <ListItem>
-                  <ListItemText primary="댓글을 불러오는 중이거나, 댓글이 없습니다." />
-                </ListItem>
+                    {(feed.FIRST_COMMENT_CONTENT && feed.FIRST_COMMENT_USERNAME) && (
+                      <Box sx={{
+                        bgcolor: '#f9f9f9',
+                        p: 1,
+                        borderRadius: '4px',
+                        borderLeft: '3px solid #1976d2',
+                        mt: 1
+                      }}>
+                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                          {feed.FIRST_COMMENT_USERNAME}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary" noWrap>
+                          {feed.FIRST_COMMENT_CONTENT}
+                        </Typography>
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            )) : <Typography variant="h6" sx={{ padding: 2 }}>로딩 중이거나 등록된 게시글이 없습니다.</Typography>}
+          </Grid>
+        </Box>
+
+        <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
+          <DialogTitle>
+            {selectedFeed?.USERNAME || selectedFeed?.USER_ID}의 게시물
+            <IconButton
+              edge="end"
+              color="inherit"
+              onClick={handleClose}
+              aria-label="close"
+              sx={{ position: 'absolute', right: 8, top: 8 }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ display: 'flex' }}>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body1">{selectedFeed?.CONTENT}</Typography>
+              {selectedFeed?.FILE_URL && (
+                <img
+                  src={selectedFeed.FILE_URL}
+                  alt={selectedFeed.FILE_NAME || '게시물 이미지'}
+                  style={{ width: '100%', marginTop: '10px' }}
+                />
               )}
-            </List>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDelete} color="error" variant='contained'>
-            삭제
-          </Button>
-          <Button onClick={handleClose} color="primary">
-            닫기
-          </Button>
-        </DialogActions>
-      </Dialog>
+            </Box>
+
+            <Box sx={{ width: '300px', marginLeft: '20px' }}>
+              <Typography variant="h6">댓글</Typography>
+              <List>
+                {comments.length > 0 ? (
+                  comments.map((comment) => (
+                    <ListItem key={comment.COMMENT_ID || comment.id}>
+                      <ListItemAvatar>
+                        <Avatar src={comment.PROFILE_IMG
+                          ? `http://localhost:3010${comment.PROFILE_IMG}` // ⭐️ 상수 사용으로 변경
+                          : "placeholder-image-url.jpg"
+                        }>
+
+
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={comment.CONTENT}
+                        secondary={comment.USERNAME || comment.USER_ID}
+                      />
+                    </ListItem>
+                  ))
+                ) : (
+                  <ListItem>
+                    <ListItemText primary="댓글을 불러오는 중이거나, 댓글이 없습니다." />
+                  </ListItem>
+                )}
+              </List>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleDelete} color="error" variant='contained'>
+              삭제
+            </Button>
+            <Button onClick={handleClose} color="primary">
+              닫기
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Container>
     </Container>
   );
 }

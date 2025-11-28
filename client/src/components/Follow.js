@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import CheckIcon from '@mui/icons-material/Check';
 import Avatar from '@mui/material/Avatar';
+import './Feed.css';
 
 
 
@@ -156,7 +157,7 @@ function Follow() {
         );
     }
 
-    return (
+    return (<Container maxWidth="md" className="feed-container">
         <Container maxWidth="sm" sx={{ mt: 4 }}>
             <Typography variant="h4" component="h1" gutterBottom textAlign="center">
                 사용자 찾기 및 팔로우
@@ -208,6 +209,7 @@ function Follow() {
                     )}
                 </List>
             </Paper>
+        </Container>
         </Container>
     );
 }
