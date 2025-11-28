@@ -9,6 +9,9 @@ function Messenger() {
     const navigate = useNavigate();
     
     const params = useParams(); 
+
+    const BOT_ID = 'GEMINI_BOT'; 
+    const BOT_NAME = 'Gemini 챗봇';
     
     const conversationId = params.conversationId || params.partnerId;
     const partnerId = params.partnerId || conversationId;
@@ -56,6 +59,10 @@ function Messenger() {
             setUserId(currentId);
             
             const actualConversationId = parseInt(conversationId, 10);
+
+            if (String(partnerId) === BOT_ID) {
+                setPartnerName(BOT_NAME);
+            }
             
             if (isNaN(actualConversationId)) {
                 navigate("/chatlist");
@@ -133,6 +140,7 @@ function Messenger() {
         const currentSocket = socketRef.current;
         const trimmedInput = input.trim();
         const token = localStorage.getItem("token");
+        // const GEMINI_BOT_ID = 'GEMINI_BOT';
         let messageData; 
 
         const actualConversationId = parseInt(conversationId, 10);

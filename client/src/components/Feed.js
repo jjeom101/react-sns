@@ -437,8 +437,8 @@ function Feed() {
                   comments.map((comment) => (
                     <ListItem key={comment.COMMENT_ID || comment.id}>
                       <ListItemAvatar>
-                        <Avatar src={comment.PROFILE_IMG
-                          ? `http://localhost:3010${comment.PROFILE_IMG}` // ⭐️ 상수 사용으로 변경
+                        <Avatar src={comment.PROFILE_IMG && comment.PROFILE_IMG.length > 0
+                          ? `http://localhost:3010${comment.PROFILE_IMG}`
                           : "placeholder-image-url.jpg"
                         }>
 
