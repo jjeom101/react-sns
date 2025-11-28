@@ -162,7 +162,7 @@ router.get('/list', authMiddleware, async (req, res) => {
             -- 💡 T1.CREATED_AT으로 정렬합니다. (테이블에 이 컬럼이 존재해야 함)
             ORDER BY T1.CREATED_AT DESC; 
         `;
-
+        
         // 쿼리에 currentUserId를 두 번 전달
         const [rows] = await db.query(sql, [currentUserId, currentUserId]);
 
