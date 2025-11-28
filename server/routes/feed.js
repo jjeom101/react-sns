@@ -49,21 +49,7 @@ router.post('/upload', upload.array('file'), async (req, res) => {
 });
 
 
-// router.get("/:userId", async (req, res) => {
-//     // console.log(`${req.protocol}://${req.get("host")}`);
-//     let { userId } = req.params;
-//     try {
-//         let sql = "SELECT * FROM sns_posts F INNER JOIN SNS_MEDIA_FILES I ON F.POST_ID = I.POST_ID WHERE F.USER_ID =?";
-//         let [list] = await db.query(sql, [userId]);
-//         res.json({
-//             list,
-//             result: "success"
-//         })
 
-//     } catch (error) {
-//         console.log(error);
-//     }
-// })
 
 router.delete("/:POST_ID", authMiddleware, async (req, res) => {
     let { POST_ID } = req.params;
@@ -184,44 +170,97 @@ router.get("/comments/:postId", async (req, res) => {
 });
 
 router.get("/all", authMiddleware, async (req, res) => {
-    // URL 파라미터 대신 토큰에 담긴 사용자 ID를 사용합니다.
     const currentUserId = req.user && (req.user.userId || req.user.id || req.user.user_id); 
-    console.log("인증된 Current User ID:", currentUserId);
+
     if (!currentUserId) {
         return res.status(401).json({ msg: "인증 정보가 유효하지 않습니다." });
     }
 
     try {
- const sql = `
+const sql = `
 SELECT
-    P.POST_ID,
-    P.USER_ID,
+    P.POST_ID AS POST_ID,
+    P.USER_ID AS USER_ID,
+    U_ORIGINAL.USERNAME AS USERNAME,
+    U_ORIGINAL.PROFILE_IMG AS PROFILE_IMAGE_URL,
     P.CONTENT,
-    P.CREATED_AT,
-    U.USERNAME,
-    U.PROFILE_IMG AS PROFILE_IMAGE_URL,
+    P.CREATED_AT AS SORT_DATE,
     MF.FILE_URL,
-    IFNULL(COUNT(L.LIKE_ID), 0) AS like_count,
-    MAX(CASE WHEN L.USER_ID = ? THEN 1 ELSE 0 END) AS is_liked 
-FROM SNS_POSTS P
-JOIN SNS_USERS U ON P.USER_ID = U.USER_ID
-LEFT JOIN SNS_MEDIA_FILES MF ON P.POST_ID = MF.POST_ID AND MF.DISPLAY_ORDER = 1
-LEFT JOIN SNS_LIKES L ON P.POST_ID = L.POST_ID /* <--- 이 줄 끝에 공백 문자 ' '가 없어야 합니다 */
-GROUP BY 
-    P.POST_ID, P.USER_ID, P.CONTENT, P.CREATED_AT, 
-    U.USERNAME, U.PROFILE_IMG, MF.FILE_URL
-ORDER BY P.CREATED_AT DESC;
-`.trim();
+    NULL AS RETWEET_USER_ID,
+    NULL AS RETWEET_USERNAME,
+    0 AS IS_RETWEET,
+    IFNULL(COUNT(DISTINCT L.LIKE_ID), 0) AS like_count,
+    MAX(CASE WHEN L.USER_ID = ? THEN 1 ELSE 0 END) AS is_liked,
+    IFNULL(COUNT(DISTINCT R.RETWEET_ID), 0) AS retweet_count,
+    MAX(CASE WHEN R.USER_ID = ? THEN 1 ELSE 0 END) AS is_retweeted
+FROM
+    SNS_POSTS P
+JOIN
+    SNS_USERS U_ORIGINAL ON P.USER_ID = U_ORIGINAL.USER_ID
+LEFT JOIN
+    SNS_MEDIA_FILES MF ON P.POST_ID = MF.POST_ID AND MF.DISPLAY_ORDER = 1
+LEFT JOIN 
+    SNS_LIKES L ON P.POST_ID = L.POST_ID
+LEFT JOIN 
+    SNS_RETWEETS R ON P.POST_ID = R.POST_ID
+GROUP BY
+    P.POST_ID, P.USER_ID, U_ORIGINAL.USERNAME, U_ORIGINAL.PROFILE_IMG, P.CONTENT, P.CREATED_AT, MF.FILE_URL
+
+UNION ALL
+
+SELECT
+    P.POST_ID AS POST_ID,
+    P.USER_ID AS USER_ID,
+    U_ORIGINAL.USERNAME AS USERNAME,
+    U_ORIGINAL.PROFILE_IMG AS PROFILE_IMAGE_URL,
+    P.CONTENT,
+    R.CREATED_AT AS SORT_DATE,
+    MF.FILE_URL,
+    R.USER_ID AS RETWEET_USER_ID,
+    U_RETWEET.USERNAME AS RETWEET_USERNAME,
+    1 AS IS_RETWEET,
+    T_COUNT.like_count,
+    T_COUNT.is_liked,
+    T_COUNT.retweet_count,
+    T_COUNT.is_retweeted
+FROM
+    SNS_RETWEETS R
+JOIN
+    SNS_POSTS P ON R.POST_ID = P.POST_ID
+JOIN
+    SNS_USERS U_ORIGINAL ON P.USER_ID = U_ORIGINAL.USER_ID
+JOIN
+    SNS_USERS U_RETWEET ON R.USER_ID = U_RETWEET.USER_ID
+LEFT JOIN
+    SNS_MEDIA_FILES MF ON P.POST_ID = MF.POST_ID AND MF.DISPLAY_ORDER = 1
+LEFT JOIN 
+    (
+        SELECT
+            P_SUB.POST_ID,
+            IFNULL(COUNT(DISTINCT L_SUB.LIKE_ID), 0) AS like_count,
+            MAX(CASE WHEN L_SUB.USER_ID = ? THEN 1 ELSE 0 END) AS is_liked,
+            IFNULL(COUNT(DISTINCT R_SUB.RETWEET_ID), 0) AS retweet_count,
+            MAX(CASE WHEN R_SUB.USER_ID = ? THEN 1 ELSE 0 END) AS is_retweeted
+        FROM
+            SNS_POSTS P_SUB
+        LEFT JOIN
+            SNS_LIKES L_SUB ON P_SUB.POST_ID = L_SUB.POST_ID
+        LEFT JOIN
+            SNS_RETWEETS R_SUB ON P_SUB.POST_ID = R_SUB.POST_ID
+        GROUP BY P_SUB.POST_ID
+    ) AS T_COUNT ON P.POST_ID = T_COUNT.POST_ID
+WHERE
+    R.USER_ID = ?
+    OR R.USER_ID IN (SELECT FOLLOWING_ID FROM SNS_FOLLOWS WHERE FOLLOWER_ID = ?)
+ORDER BY
+    SORT_DATE DESC
+`.trim(); 
         
-        // currentUserId를 SQL 쿼리 매개변수에 바인딩하여 is_liked 값을 계산합니다.
-        const [list] = await db.query(sql, [currentUserId]); 
-        console.log("=== [SERVER] DB 쿼리 결과 확인 ===");
-        if (list && list.length > 0) {
-            console.log("첫 번째 게시물 데이터 (필드 이름 확인):", list[0]);
-        } else {
-            console.log("DB에서 로드된 게시물이 없습니다.");
-        }
-        console.log("=====================================");
+const cleanSql = sql.replace(/\s+/g, ' ').trim();
+   
+        const [list] = await db.query(cleanSql, [currentUserId, currentUserId,currentUserId,currentUserId,currentUserId,currentUserId]); 
+        
+    
 
         res.json({ msg: "success", list: list });
     } catch (error) {
@@ -229,7 +268,6 @@ ORDER BY P.CREATED_AT DESC;
         res.status(500).json({ msg: "피드 조회 실패", error: error.message });
     }
 });
-
 router.post("/like", authMiddleware, async (req, res) => {
     const currentUserId = req.user?.userId || req.user?.id || req.user?.user_id;
     const { postId, shortId } = req.body; 
@@ -287,7 +325,7 @@ router.post("/like", authMiddleware, async (req, res) => {
         return res.json({ 
             msg: liked ? "like_added" : "like_removed", 
             liked: liked, 
-            likeCount: finalLikeCount // 💡 최신 갯수 반환
+            likeCount: finalLikeCount 
         });
 
     } catch (error) {
@@ -297,7 +335,69 @@ router.post("/like", authMiddleware, async (req, res) => {
 });
 
 
+router.post("/retweet", authMiddleware, async (req, res) => {
+    const currentUserId = req.user?.userId || req.user?.id || req.user?.user_id;
+    const { postId, shortId } = req.body; 
 
+    if (!currentUserId || (!postId && !shortId)) {
+        return res.status(400).json({ msg: "필수 정보(userId, postId 또는 shortId)가 누락되었습니다." });
+    }
+
+    const targetId = postId || shortId;
+    const targetField = postId ? 'POST_ID' : 'SHORT_ID';
+    
+    let retweeted = false; 
+    let finalRetweetCount = 0;
+
+    try {
+   
+        const checkSql = `
+            SELECT RETWEET_ID FROM SNS_RETWEETS 
+            WHERE USER_ID = ? AND ${targetField} = ?;
+        `;
+        const [existingRetweet] = await db.query(checkSql, [currentUserId, targetId]);
+
+        if (existingRetweet.length > 0) {
+      
+            const deleteSql = `
+                DELETE FROM SNS_RETWEETS 
+                WHERE USER_ID = ? AND ${targetField} = ?;
+            `;
+            await db.query(deleteSql, [currentUserId, targetId]);
+            retweeted = false;
+        } else {
+     
+            const insertSql = `
+                INSERT INTO SNS_RETWEETS (USER_ID, ${targetField}) 
+                VALUES (?, ?);
+            `;
+            await db.query(insertSql, [currentUserId, targetId]);
+            retweeted = true;
+        }
+
+    
+        const countSql = `
+            SELECT COUNT(RETWEET_ID) AS retweet_count 
+            FROM SNS_RETWEETS 
+            WHERE ${targetField} = ?;
+        `;
+        const [countResult] = await db.query(countSql, [targetId]);
+        
+        if (countResult.length > 0) {
+            finalRetweetCount = countResult[0].retweet_count;
+        }
+
+        return res.json({ 
+            msg: retweeted ? "retweet_added" : "retweet_removed", 
+            retweeted: retweeted, 
+            retweetCount: finalRetweetCount 
+        });
+
+    } catch (error) {
+        console.error("리트윗 처리 중 오류 발생:", error);
+        res.status(500).json({ msg: "리트윗 처리 실패", error: error.message });
+    }
+});
 
 
 module.exports = router;

@@ -64,13 +64,13 @@ function Feed() {
   function fnFeeds() {
     if (!userId) return;
     const token = localStorage.getItem("token");
-   fetch("http://localhost:3010/feed/all", {
-        method: "GET",
-        headers: {
-           
-            "Authorization": `Bearer ${token}` 
-        }
-        })
+    fetch("http://localhost:3010/feed/all", {
+      method: "GET",
+      headers: {
+
+        "Authorization": `Bearer ${token}`
+      }
+    })
       .then(res => res.json())
       .then(data => {
         console.log("서버에서 받은 데이터:", data);
@@ -127,7 +127,7 @@ function Feed() {
         if (feed.POST_ID === postId) {
           return {
             ...feed,
-            is_liked: result.liked,    
+            is_liked: result.liked,
             like_count: result.likeCount
           };
         }
@@ -139,7 +139,41 @@ function Feed() {
     }
   };
 
-  const handleRetweet = (postId) => { };
+  const handleRetweet = async (postId) => {
+    const token = localStorage.getItem("token");
+    if (!token || !postId) return;
+
+    try {
+      const response = await fetch("http://localhost:3010/feed/retweet", { // 💡 /feed/retweet 엔드포인트
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ postId: postId })
+      });
+
+      if (!response.ok) {
+        throw new Error("리트윗 요청에 실패했습니다.");
+      }
+
+      const result = await response.json(); // { retweeted: boolean, retweetCount: number }
+
+      setFeeds(prevFeeds => prevFeeds.map(feed => {
+        if (feed.POST_ID === postId) {
+          return {
+            ...feed,
+            is_retweeted: result.retweeted ? 1 : 0,  // 서버 응답을 반영
+            retweet_count: result.retweetCount     // 서버 응답을 반영
+          };
+        }
+        return feed;
+      }));
+
+    } catch (error) {
+      console.error("리트윗 처리 오류:", error);
+    }
+  };
 
   const fetchComments = async (postId) => {
     const token = localStorage.getItem("token");
@@ -305,17 +339,17 @@ function Feed() {
                   </Typography>
 
                   <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 1.5, borderTop: '1px solid #eee', pt: 1 }}>
+
                     <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleLike(feed.POST_ID); }}>
                       {feed.is_liked ? <FavoriteIcon fontSize="small" color="error" /> : <FavoriteBorderIcon fontSize="small" />}
                       <Typography variant="caption" sx={{ ml: 0.5, color: 'text.secondary' }}>{feed.like_count || 0}</Typography>
                     </IconButton>
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleRetweet(feed.POST_ID); }} sx={{ ml: 1 }}>
-                      <RepeatIcon fontSize="small" />
-                      <Typography variant="caption" sx={{ ml: 0.5, color: 'text.secondary' }}>
 
-                        {feed.like_count|| 0}
-                      </Typography>
+                    <IconButton size="small"onClick={(e) => { e.stopPropagation(); handleRetweet(feed.POST_ID); }}sx={{ ml: 0.5 }}>
+                      <RepeatIcon fontSize="small" color={feed.is_retweeted ? "success" : "action"} />
+                      <Typography variant="caption" sx={{ ml: 0.1, color: 'text.secondary' }}>{feed.retweet_count || 0}</Typography>
                     </IconButton>
+
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
