@@ -6,13 +6,13 @@ const { checkSql } = require('../utils/db_helpers');
 
 async function ensureConversationExists(user1, user2) {
     const users = [user1, user2].sort(); 
-    let existing = []; // ⬅️ 변수를 미리 선언합니다.
+    let existing = []; 
 
-    // 1. 기존 1:1 대화방 찾기
+
     const findQuerySimple = `
         SELECT C.CONVERSATION_ID
         FROM SNS_CONVERSATIONS C
-        WHERE C.IS_GROUP = 0
+        WHERE C.TYPE = 'DM'
         AND C.CONVERSATION_ID IN (
             SELECT CONVERSATION_ID FROM SNS_PARTICIPANTS WHERE USER_ID = ?
         )
@@ -21,9 +21,9 @@ async function ensureConversationExists(user1, user2) {
         )
     `;
     
-    // db.query 결과에서 실제 데이터를 담는 rows만 추출합니다.
+
     const [rows] = await db.query(findQuerySimple, [users[0], users[1]]);
-    existing = rows; // ⬅️ rows를 existing에 할당합니다.
+    existing = rows;
 
 
     if (existing.length > 0) { 
@@ -31,8 +31,8 @@ async function ensureConversationExists(user1, user2) {
         return existing[0].CONVERSATION_ID;
     }
 
-    // 2. 대화방이 없으면 새로 생성
-    const insertConvQuery = `INSERT INTO SNS_CONVERSATIONS (IS_GROUP) VALUES (0)`; 
+
+    const insertConvQuery = `INSERT INTO SNS_CONVERSATIONS (TYPE) VALUES ('DM')`; 
     console.log('[ChatLog] 새로운 대화방 생성 시도...');
     
     const [convResult] = await db.query(insertConvQuery);
@@ -44,7 +44,6 @@ async function ensureConversationExists(user1, user2) {
     }
     console.log(`[ChatLog] 새로운 대화방 ID: ${newConvId}`);
 
-    // 3. 참여자 등록
     const insertParticipantsQuery = `
         INSERT INTO SNS_PARTICIPANTS (CONVERSATION_ID, USER_ID, LAST_READ_AT)
         VALUES (?, ?, NOW()), (?, ?, NOW())

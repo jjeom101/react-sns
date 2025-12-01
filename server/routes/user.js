@@ -68,15 +68,15 @@ router.post('/login', async (req, res) => {
         // -------------------------------------------------------------
         
         if(list.length > 0){
-            // 아이디 존재
+         
             const match = await bcrypt.compare(pwd, list[0].PASSWORD);
             if(match){
                 msg = list[0].USERNAME + "님 환영합니다!";
                 result = "true";
                 let user = {
                     userId : list[0].USER_ID,
-                    userName : list[0].USERNAME,// 권한등 필요한 정보 추가 
-                    status : "A" //일단 하드 코딩 db에 없어서
+                    userName : list[0].USERNAME,
+                 
                 }
                 
                 token = jwt.sign(user, JWT_KEY, {expiresIn : '1h'});
@@ -84,15 +84,15 @@ router.post('/login', async (req, res) => {
                 msg = "비밀번호를 확인해라";
             }
         } else {
-            // 아이디 없음
+         
             msg = "해당 아이디가 존재하지 않습니다.";
         }
         
         
         res.json({
-            msg : msg,  //msg 이런식으로 생략가능
+            msg : msg, 
             result : result,
-            token: token // JWT 토큰도 포함하여 응답합니다.
+            token: token 
         });
     } catch (error) {
         console.log("에러 발생!");
@@ -125,7 +125,7 @@ router.get('/:userId/followers', async (req, res) => {
     const { userId } = req.params;
     
     try {
-        // T1: 팔로워 ID 목록 조회 (현재 사용자(userId)를 팔로잉하고 있는 사람들)
+        
         let sql = `
             SELECT 
                 T1.FOLLOWER_ID AS USER_ID,
@@ -157,7 +157,7 @@ router.get('/:userId/followings', async (req, res) => {
     const { userId } = req.params;
     
     try {
-        // T2: 팔로잉 ID 목록 조회 (현재 사용자(userId)가 팔로잉하고 있는 사람들)
+        
         let sql = `
             SELECT 
                 T1.FOLLOWING_ID AS USER_ID,
@@ -187,40 +187,38 @@ router.get('/:userId/followings', async (req, res) => {
 
 
 
-// ⭐️ 파일 저장 설정 (Multer Storage Configuration)
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // 1. 디렉터리가 없으면 생성합니다.
+      
         if (!fs.existsSync(uploadDir)) {
-            // recursive: true 옵션으로 상위 폴더도 한 번에 생성합니다.
+       
             fs.mkdirSync(uploadDir, { recursive: true });
             console.log(`[Multer] 새 업로드 디렉터리 생성: ${uploadDir}`);
         }
-        // 2. 절대 경로를 사용하여 Multer에 전달합니다.
+   
         cb(null, uploadDir); 
     },
     filename: (req, file, cb) => {
-        // 파일명 생성 로직은 그대로 유지합니다.
+       
         const ext = path.extname(file.originalname);
         const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + ext;
         cb(null, uniqueName);
     }
 });
 
-// ⭐️ Multer 미들웨어 생성
+
 const upload = multer({ storage: storage });
 
-// 토큰에서 사용자 ID를 추출하는 미들웨어 (인증 미들웨어)가 필요하지만, 
-// 여기서는 간단히 FormData에서 넘어온 userId를 사용하는 예시를 사용하겠습니다.
 
-// ⭐️ POST /user/profile/image 라우터 구현
+
 router.post('/profile/image', upload.single('profileImage'), async (req, res) => {
     // upload.single('profileImage'): 프론트에서 FormData에 'profileImage'라는 이름으로 보낸 파일을 처리합니다.
     
     const userId = req.body.userId;
     
     // 파일이 저장된 서버상의 경로
-    const relativePath = req.file ? `/profile_images/${req.file.filename}` : null; 
+    const relativePath = req.file ? `/uploads/profile_images/${req.file.filename}` : null; 
     
     if (!relativePath) {
         return res.status(400).json({ result: 'fail', msg: '파일 업로드에 실패했습니다.' });

@@ -9,7 +9,6 @@ import {
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
-// 💡 좋아요 토글을 위해 FavoriteBorderIcon을 추가합니다.
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import CommentIcon from '@mui/icons-material/Comment';
@@ -17,9 +16,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
 
-// ⭐️ 서버 기본 주소 정의 제거: URL을 직접 사용합니다.
-// const SERVER_BASE_URL = "http://localhost:3010"; 
-const SERVER_URL = "http://localhost:3010"; // 내부적으로 사용될 상수 선언 (코드 가독성 유지를 위해)
+const SERVER_URL = "http://localhost:3010"; 
 
 function ShortsFeed() {
     const [shorts, setShorts] = useState([]);
@@ -48,13 +45,12 @@ function ShortsFeed() {
         }
     }, [navigate]);
 
-    // --- 2. 쇼츠 목록 로드 함수 (URL 하드코딩) ---
+    // --- 2. 쇼츠 목록 로드 함수 ---
     const fetchShorts = async () => {
         const token = localStorage.getItem("token");
         if (!userId || !token) return;
 
         try {
-            // 🚨 하드코딩 적용: SERVER_BASE_URL 대신 직접 URL 사용
             const response = await fetch(`${SERVER_URL}/shorts/feed?page=1&limit=10`, {
                 method: "GET",
                 headers: {
@@ -131,7 +127,6 @@ function ShortsFeed() {
         if (!token || !shortId) return;
 
         try {
-            // 🚨 하드코딩 적용
             await fetch(`${SERVER_URL}/shorts/view/${shortId}`, { 
                 method: "POST",
                 headers: { "Authorization": `Bearer ${token}` }
@@ -146,13 +141,12 @@ function ShortsFeed() {
         }
     };
 
-    // ⭐️ 좋아요 토글 핸들러 함수 추가 및 하드코딩 적용
+    // ⭐️ 좋아요 토글 핸들러 함수 
     const handleLikeToggle = async (shortId, isLiked) => {
         const token = localStorage.getItem("token");
         if (!token || !shortId) return;
 
         try {
-            // 🚨 하드코딩 적용
             const endpoint = `${SERVER_URL}/shorts/like/${shortId}`;
 
             const response = await fetch(endpoint, {
@@ -162,9 +156,8 @@ function ShortsFeed() {
             
             if (!response.ok) throw new Error("좋아요 처리 실패");
 
-            // 서버 응답에서 액션(liked/unliked)과 최신 like_count를 받아 처리하는 것이 가장 안정적입니다.
             const data = await response.json(); 
-            const newAction = data.action; // 'liked' 또는 'unliked'
+            const newAction = data.action;
             const newLikeCount = data.like_count;
 
             // 상태 업데이트: 좋아요 수와 좋아요 여부를 서버 응답을 기준으로 업데이트
@@ -184,13 +177,17 @@ function ShortsFeed() {
         }
     };
 
-    // --- 4. 렌더링 (좋아요 버튼 로직 연결) ---
+    // --- 4. 렌더링 (70% 너비 적용) ---
     return (
+        // ⭐️ 스타일 수정: 최대 너비를 70%로 설정하고 중앙 정렬합니다.
         <div style={{ 
             height: '100vh', 
             overflowY: 'scroll', 
+            maxWidth: '70%', // 70% 너비 적용
+            margin: '0 auto', // 중앙 정렬
+            border: '1px solid #ddd' // 모바일 프레임처럼 보이기 위한 테두리 추가 (선택 사항)
         }}>
-            <AppBar position="fixed">
+            <AppBar position="fixed" sx={{ width: 'inherit' }}> {/* 너비를 부모 div와 동일하게 설정 */}
                 <Toolbar>
                     <Typography variant="h6">SNS Shorts</Typography>
                 </Toolbar>
@@ -204,11 +201,11 @@ function ShortsFeed() {
                         data-index={index}
                         data-short-id={short.SHORT_ID}
                     >
-                        {/* 비디오 요소 (URL 하드코딩) */}
+                        {/* 비디오 요소 */}
                         <video
                             ref={el => videoRefs.current[index] = el}
                             id={`video-${short.SHORT_ID}`}
-                            src={short.VIDEO_URL ? `${SERVER_URL}${short.VIDEO_URL}` : ''} // 🚨 하드코딩 적용
+                            src={short.VIDEO_URL ? `${SERVER_URL}${short.VIDEO_URL}` : ''}
                             loop
                             muted 
                             playsInline
@@ -231,25 +228,24 @@ function ShortsFeed() {
                                 {short.DESCRIPTION}
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 2 }}>
-                                {/* ⭐️ 좋아요 버튼: 로직 연결 및 UI 변경 */}
+                                {/* 좋아요 버튼 */}
                                 <IconButton 
-                                    // 좋아요 상태에 따라 색상과 아이콘 변경
                                     sx={{ color: short.IS_LIKED === 1 ? 'red' : 'white' }} 
                                     onClick={() => handleLikeToggle(short.SHORT_ID, short.IS_LIKED)}
                                 >
                                     {short.IS_LIKED === 1 ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                                     <Typography variant="caption" sx={{ ml: 0.5 }}>{short.like_count || 0}</Typography>
                                 </IconButton>
-                                {/* 댓글 버튼 (기존 유지) */}
+                                {/* 댓글 버튼 */}
                                 <IconButton sx={{ color: 'white' }}>
                                     <CommentIcon />
                                 </IconButton>
-                                {/* 조회수 표시 (기존 유지) */}
+                                {/* 조회수 표시 */}
                                 <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
                                     <VisibilityIcon fontSize="small" />
                                     <Typography variant="caption" sx={{ ml: 0.5 }}>{short.VIEW_COUNT || 0}</Typography>
                                 </Box>
-                                {/* 재생/일시정지 버튼 (기존 유지) */}
+                                {/* 재생/일시정지 버튼 */}
                                 <IconButton 
                                     sx={{ color: 'white' }} 
                                     onClick={() => {
