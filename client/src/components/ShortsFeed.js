@@ -9,23 +9,26 @@ import {
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
+// 💡 좋아요 토글을 위해 FavoriteBorderIcon을 추가합니다.
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import CommentIcon from '@mui/icons-material/Comment';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from 'react-router-dom';
 
-// ⭐️ 서버 기본 주소 정의 (필수)
-const SERVER_BASE_URL = "http://localhost:3010";
+// ⭐️ 서버 기본 주소 정의 제거: URL을 직접 사용합니다.
+// const SERVER_BASE_URL = "http://localhost:3010"; 
+const SERVER_URL = "http://localhost:3010"; // 내부적으로 사용될 상수 선언 (코드 가독성 유지를 위해)
 
 function ShortsFeed() {
     const [shorts, setShorts] = useState([]);
     const [userId, setUserId] = useState(null);
-    const [currentPlayingIndex, setCurrentPlayingIndex] = useState(0); // 현재 재생 중인 쇼츠 인덱스
+    const [currentPlayingIndex, setCurrentPlayingIndex] = useState(0); 
     const navigate = useNavigate();
-    const videoRefs = useRef([]); // 각 비디오 요소를 참조하기 위한 Ref 배열
+    const videoRefs = useRef([]); 
 
-    // --- 1. 인증 및 사용자 ID 추출 로직 (기존 Feed와 동일) ---
+    // --- 1. 인증 및 사용자 ID 추출 로직 ---
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (token) {
@@ -45,13 +48,14 @@ function ShortsFeed() {
         }
     }, [navigate]);
 
-    // --- 2. 쇼츠 목록 로드 함수 ---
+    // --- 2. 쇼츠 목록 로드 함수 (URL 하드코딩) ---
     const fetchShorts = async () => {
         const token = localStorage.getItem("token");
         if (!userId || !token) return;
 
         try {
-            const response = await fetch(`${SERVER_BASE_URL}/shorts/feed?page=1&limit=10`, { // 💡 /shorts/feed 엔드포인트 사용
+            // 🚨 하드코딩 적용: SERVER_BASE_URL 대신 직접 URL 사용
+            const response = await fetch(`${SERVER_URL}/shorts/feed?page=1&limit=10`, {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${token}`
@@ -60,10 +64,11 @@ function ShortsFeed() {
             if (!response.ok) throw new Error("쇼츠 로드 실패");
             
             const data = await response.json();
-            setShorts(data.list || []); // list 배열을 가정
+            setShorts(data.list || []); 
             
         } catch (error) {
             console.error("쇼츠 로드 오류:", error);
+            console.log("error===>",error);
             setShorts([]);
         }
     };
@@ -75,16 +80,14 @@ function ShortsFeed() {
     }, [userId]);
 
 
-    // --- 3. 조회수 증가 및 자동 재생 처리 로직 (핵심) ---
-
-    // 💡 Intersection Observer를 사용하여 화면에 보이는 비디오를 감지합니다.
+    // --- 3. 조회수 증가 및 자동 재생 처리 로직 ---
     useEffect(() => {
         if (shorts.length === 0) return;
 
         const options = {
-            root: null, // 뷰포트
+            root: null, 
             rootMargin: '0px',
-            threshold: 0.8, // 80% 이상 보일 때
+            threshold: 0.8, 
         };
 
         const observer = new IntersectionObserver((entries) => {
@@ -94,34 +97,28 @@ function ShortsFeed() {
                 const videoElement = videoRefs.current[index];
 
                 if (entry.isIntersecting && index !== currentPlayingIndex) {
-                    // 현재 비디오 재생
                     videoElement?.play().catch(e => console.log("자동 재생 실패:", e));
                     setCurrentPlayingIndex(index);
                     
-                    // 이전 비디오 일시 정지 (선택 사항)
                     videoRefs.current.forEach((video, i) => {
                         if (i !== index && video && !video.paused) {
                             video.pause();
                         }
                     });
 
-                    // ⭐️ 조회수 증가 API 호출
                     handleViewCount(shortId);
 
                 } else if (!entry.isIntersecting && videoElement && !videoElement.paused) {
-                    // 화면에서 벗어날 경우 일시 정지
                     videoElement.pause();
                 }
             });
         }, options);
 
-        // 모든 비디오 요소를 관찰 대상에 추가
         videoRefs.current.forEach(video => {
             if (video) observer.observe(video);
         });
 
         return () => {
-            // 클린업: 관찰 중단
             videoRefs.current.forEach(video => {
                 if (video) observer.unobserve(video);
             });
@@ -134,12 +131,13 @@ function ShortsFeed() {
         if (!token || !shortId) return;
 
         try {
-            await fetch(`${SERVER_BASE_URL}/shorts/view/${shortId}`, { 
+            // 🚨 하드코딩 적용
+            await fetch(`${SERVER_URL}/shorts/view/${shortId}`, { 
                 method: "POST",
                 headers: { "Authorization": `Bearer ${token}` }
             });
 
-            // 조회수가 즉시 업데이트되도록 상태 업데이트 (선택 사항)
+            // 조회수 즉시 업데이트
             setShorts(prev => prev.map(s => 
                 s.SHORT_ID.toString() === shortId.toString() ? { ...s, VIEW_COUNT: (s.VIEW_COUNT || 0) + 1 } : s
             ));
@@ -148,40 +146,76 @@ function ShortsFeed() {
         }
     };
 
-    // --- 4. 렌더링 (전체 화면 스크롤 UI) ---
+    // ⭐️ 좋아요 토글 핸들러 함수 추가 및 하드코딩 적용
+    const handleLikeToggle = async (shortId, isLiked) => {
+        const token = localStorage.getItem("token");
+        if (!token || !shortId) return;
+
+        try {
+            // 🚨 하드코딩 적용
+            const endpoint = `${SERVER_URL}/shorts/like/${shortId}`;
+
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            
+            if (!response.ok) throw new Error("좋아요 처리 실패");
+
+            // 서버 응답에서 액션(liked/unliked)과 최신 like_count를 받아 처리하는 것이 가장 안정적입니다.
+            const data = await response.json(); 
+            const newAction = data.action; // 'liked' 또는 'unliked'
+            const newLikeCount = data.like_count;
+
+            // 상태 업데이트: 좋아요 수와 좋아요 여부를 서버 응답을 기준으로 업데이트
+            setShorts(prev => prev.map(s => {
+                if (s.SHORT_ID.toString() === shortId.toString()) {
+                    return { 
+                        ...s, 
+                        IS_LIKED: newAction === 'liked' ? 1 : 0, 
+                        like_count: newLikeCount
+                    };
+                }
+                return s;
+            }));
+
+        } catch (error) {
+            console.error("좋아요 토글 오류:", error);
+        }
+    };
+
+    // --- 4. 렌더링 (좋아요 버튼 로직 연결) ---
     return (
         <div style={{ 
             height: '100vh', 
             overflowY: 'scroll', 
-            // 💡 스크롤 스냅 효과를 사용하여 쇼츠 간 부드러운 전환 구현 (CSS에서 처리)
         }}>
             <AppBar position="fixed">
                 <Toolbar>
                     <Typography variant="h6">SNS Shorts</Typography>
-                    {/* 다른 메뉴 아이콘 */}
                 </Toolbar>
             </AppBar>
             <Box mt={7}> 
                 {shorts.length > 0 ? shorts.map((short, index) => (
                     <Box 
                         key={short.SHORT_ID}
-                        className="short-item-container" // CSS에서 height: 100vh 및 scroll-snap 설정 필요
+                        className="short-item-container" 
                         style={{ position: 'relative', height: '100vh' }} 
                         data-index={index}
                         data-short-id={short.SHORT_ID}
                     >
-                        {/* 비디오 요소 */}
+                        {/* 비디오 요소 (URL 하드코딩) */}
                         <video
                             ref={el => videoRefs.current[index] = el}
                             id={`video-${short.SHORT_ID}`}
-                            src={short.VIDEO_URL ? `${SERVER_BASE_URL}${short.VIDEO_URL}` : ''} // ⭐️ URL 조합
+                            src={short.VIDEO_URL ? `${SERVER_URL}${short.VIDEO_URL}` : ''} // 🚨 하드코딩 적용
                             loop
-                            muted // 초기에는 음소거
+                            muted 
                             playsInline
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
 
-                        {/* 오버레이 UI (상세 정보 및 액션 버튼) */}
+                        {/* 오버레이 UI */}
                         <Box sx={{ 
                             position: 'absolute', 
                             bottom: 0, 
@@ -197,21 +231,25 @@ function ShortsFeed() {
                                 {short.DESCRIPTION}
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 2 }}>
-                                {/* 좋아요 버튼 (로직 추가 필요) */}
-                                <IconButton sx={{ color: 'white' }}>
-                                    <FavoriteIcon />
+                                {/* ⭐️ 좋아요 버튼: 로직 연결 및 UI 변경 */}
+                                <IconButton 
+                                    // 좋아요 상태에 따라 색상과 아이콘 변경
+                                    sx={{ color: short.IS_LIKED === 1 ? 'red' : 'white' }} 
+                                    onClick={() => handleLikeToggle(short.SHORT_ID, short.IS_LIKED)}
+                                >
+                                    {short.IS_LIKED === 1 ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                                     <Typography variant="caption" sx={{ ml: 0.5 }}>{short.like_count || 0}</Typography>
                                 </IconButton>
-                                {/* 댓글 버튼 (로직 추가 필요) */}
+                                {/* 댓글 버튼 (기존 유지) */}
                                 <IconButton sx={{ color: 'white' }}>
                                     <CommentIcon />
                                 </IconButton>
-                                {/* 조회수 표시 */}
+                                {/* 조회수 표시 (기존 유지) */}
                                 <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
                                     <VisibilityIcon fontSize="small" />
                                     <Typography variant="caption" sx={{ ml: 0.5 }}>{short.VIEW_COUNT || 0}</Typography>
                                 </Box>
-                                {/* 재생/일시정지 버튼 (선택적) */}
+                                {/* 재생/일시정지 버튼 (기존 유지) */}
                                 <IconButton 
                                     sx={{ color: 'white' }} 
                                     onClick={() => {

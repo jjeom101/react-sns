@@ -12,7 +12,7 @@ async function getMessagesByConversationId(conversationId) {
     // MESSAGE 테이블의 필드명을 확인하여 SENDER_ID와 CONTENT를 가져옵니다.
     const query = `
         SELECT SENDER_ID AS senderId, CONTENT AS content 
-        FROM MESSAGE 
+        FROM SNS_MESSAGES 
         WHERE CONVERSATION_ID = ? 
         ORDER BY CREATED_AT ASC
     `;
@@ -25,27 +25,33 @@ async function getMessagesByConversationId(conversationId) {
     }
 }
 
-/**
- * 새로운 메시지를 DB에 저장합니다. (사용자 메시지 및 챗봇 응답 모두)
- * @param {Object} message - 메시지 객체 (server.js에서 생성된 aiMessage 객체 등)
- */
+
+
 async function insertMessage(message) {
-    const { conversationId, senderId, receiverId, text, isRead = 0 } = message;
+    const { conversationId, senderId, text, isRead = 0 } = message;
     
-    // 챗봇 응답일 경우 is_read를 1로 설정하여 바로 읽음 처리합니다.
+ 
     const readStatus = senderId === GEMINI_BOT_ID ? 1 : isRead;
-    
-    // DB 테이블 구조에 맞게 필드명을 사용합니다.
-    const query = `
-        INSERT INTO MESSAGE (CONVERSATION_ID, SENDER_ID, RECEIVER_ID, CONTENT, IS_READ)
-        VALUES (?, ?, ?, ?, ?)
+    console.log("text===>",text);
+
+
+const query = `
+        INSERT INTO SNS_MESSAGES (CONVERSATION_ID, SENDER_ID, CONTENT, IS_READ)
+        VALUES (?, ?, ?, ?)
     `;
-    try {
-        await db.query(query, [conversationId, senderId, receiverId, text, readStatus]);
-    } catch (error) {
-        console.error("메시지 저장 오류:", error);
-        throw error;
-    }
+try {
+const [result] = await db.query(query, [
+            conversationId, 
+            senderId,       
+            text,           
+            readStatus      
+        ]);
+    return result.insertId;
+} catch (error) {
+    console.error("메시지 저장 오류:", error);
+    throw error;
+}
+
 }
 
 module.exports = { getMessagesByConversationId, insertMessage };
