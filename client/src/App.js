@@ -2,7 +2,7 @@ import React from 'react';
 import { Route, Routes, useLocation,Navigate } from 'react-router-dom';
 import { Box, CssBaseline } from '@mui/material';
 import Login from './components/Login';
-import Join from './components/Join'; // Join으로 변경
+import Join from './components/Join'; 
 import Feed from './components/Feed';
 import Register from './components/Register';
 import MyPage from './components/MyPage';
@@ -11,6 +11,7 @@ import Message from './components/messeger';
 import Follow from './components/Follow'; 
 import ChatList from './components/ChatList';
 import ShortsFeed from './components/ShortsFeed';
+import ShortsRegister from './components/shortsRegister.js';
 
 
 
@@ -46,6 +47,8 @@ function App() {
           <Route path="/user/:userId" element={<Follow />} />
           <Route path="/follow" element={<Follow />} />
           <Route path="/mypage" element={<MyPage />} />
+          <Route path="/shorts/register" element={<ShortsRegister />} />
+          <Route path="/shortsRegister" element={<ShortsRegister />} />
         </Routes>
       </Box>
     </Box>
