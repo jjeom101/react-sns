@@ -111,9 +111,9 @@ function FollowListModal({ isOpen, onClose, title, list }) {
                                     key={item.USER_ID}
                                     secondaryAction={
                                         <IconButton
-                                            edge="end"
-                                            aria-label="채팅"
-                                            onClick={() => handleChatClick(item.USER_ID, item.NICKNAME || item.USERNAME)}
+                                            // edge="end"
+                                            // aria-label="채팅"
+                                            // onClick={() => handleChatClick(item.USER_ID, item.NICKNAME || item.USERNAME)}
                                         >
                                             <ChatIcon />
                                         </IconButton>

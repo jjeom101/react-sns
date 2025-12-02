@@ -9,11 +9,9 @@ const authMiddleware = require('../auth');
 const JWT_KEY = "server_secret_key"; 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // 파일을 저장할 디렉토리 (서버 루트 경로에 'uploads' 폴더가 있어야 함)
         cb(null, 'uploads/'); 
     },
     filename: (req, file, cb) => {
-        // 파일명이 겹치지 않도록 현재 시간 + 파일명으로 설정
         cb(null, Date.now() + '-' + file.originalname); 
     }
 });
@@ -23,7 +21,7 @@ const upload = multer({ storage: storage });
 
 router.get('/feed', authMiddleware, async (req, res) => {
     console.log("req.query===>",req.query);
-   
+    
     try {
         const { page = 1, limit = 10 } = req.query;
         const offset = (page - 1) * limit;
@@ -82,16 +80,16 @@ router.post('/like/:shortId', authMiddleware, async (req, res) => {
     }
 
     try {
-        // 1단계: 좋아요가 이미 존재하는지 확인
+        
         const checkSql = "SELECT LIKE_ID FROM SNS_LIKES WHERE SHORT_ID = ? AND USER_ID = ?";
         const [existingLike] = await db.query(checkSql, [shortId, userId]);
 
         if (existingLike.length > 0) {
-            // 좋아요 취소 (DELETE)
+            
             const deleteSql = "DELETE FROM SNS_LIKES WHERE SHORT_ID = ? AND USER_ID = ?";
             await db.query(deleteSql, [shortId, userId]);
 
-            // 좋아요 취소 후 총 좋아요 수를 다시 조회
+            
             const countSql = "SELECT COUNT(*) AS like_count FROM SNS_LIKES WHERE SHORT_ID = ?";
             const [result] = await db.query(countSql, [shortId]);
             
@@ -103,11 +101,11 @@ router.post('/like/:shortId', authMiddleware, async (req, res) => {
             });
 
         } else {
-            // 좋아요 등록 (INSERT)
+            
             const insertSql = "INSERT INTO SNS_LIKES (SHORT_ID, USER_ID) VALUES (?, ?)";
             await db.query(insertSql, [shortId, userId]);
 
-            // 좋아요 등록 후 총 좋아요 수를 다시 조회
+            
             const countSql = "SELECT COUNT(*) AS like_count FROM SNS_LIKES WHERE SHORT_ID = ?";
             const [result] = await db.query(countSql, [shortId]);
 
@@ -130,10 +128,10 @@ router.post('/upload', authMiddleware, upload.single('videoFile'),
 
     console.log("--- 업로드 요청 디버깅 ---");
     console.log("req.file:", req.file);     
-    console.log("req.body:", req.body);    
+    console.log("req.body:", req.body);     
     console.log("-----------------------");
     
-    // 1. req.body의 안전성 강화 (이전 오류 해결용)
+    
     const { content = '' } = req.body || {}; 
     
     const userId = req.user.userId;
@@ -156,7 +154,7 @@ router.post('/upload', authMiddleware, upload.single('videoFile'),
             (USER_ID, VIDEO_URL, DESCRIPTION) 
             VALUES (?, ?, ?)
         `;
-        // DB 쿼리에 videoUrl과 description 변수를 사용
+        
         const [insertResult] = await db.query(insertSql, [userId, videoUrl, description]); 
         
         const shortId = insertResult.insertId;
@@ -165,11 +163,11 @@ router.post('/upload', authMiddleware, upload.single('videoFile'),
             msg: "upload_success",
             shortId: shortId,
             videoPath: filePath,
-            content: content // 클라이언트 응답 시에는 content 이름 그대로 사용해도 무방
+            content: content 
         });
 
     } catch (error) {
-        // ... 오류 처리 로직
+        
         console.error("쇼츠 업로드 및 DB 삽입 중 에러:", error);
         res.status(500).json({ msg: "fail", error: "쇼츠 등록 중 서버 오류가 발생했습니다." });
     }

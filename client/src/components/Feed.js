@@ -80,18 +80,15 @@ function Feed() {
           data.list.forEach((feed, index) => {
             console.log(`게시물 #${index + 1} (POST_ID: ${feed.POST_ID}):`);
 
-            // 🚨 like_count -> like_count로 수정되었는지 확인하세요.
+           
             console.log(`- 좋아요 갯수 (like_count): ${feed.like_count}`);
 
-            // 🚨 IS_LIKED -> is_liked로 수정되었는지 확인하세요.
+       
             console.log(`- 현재 사용자 좋아요 여부 (IS_LIKED): ${feed.is_liked}`);
-            
-            // ⭐️ 추가된 배지 콘솔 출력
+   
             console.log(`- 배지 이미지 경로 (ACTIVE_BADGE_IMG): ${feed.ACTIVE_BADGE_IMG}`);
             console.log(`- 배지 이름 (ACTIVE_BADGE_NAME): ${feed.ACTIVE_BADGE_NAME}`);
-            // ⭐️
-
-            // 💡 만약 like_count가 undefined라면, 원본 이름을 확인해 봅시다.
+       
             console.log(`- 서버에서 넘어온 전체 객체: `, feed);
           });
         } else {
@@ -151,7 +148,7 @@ function Feed() {
     if (!token || !postId) return;
 
     try {
-      const response = await fetch("http://localhost:3010/feed/retweet", { // 💡 /feed/retweet 엔드포인트
+      const response = await fetch("http://localhost:3010/feed/retweet", { 
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -164,7 +161,7 @@ function Feed() {
         throw new Error("리트윗 요청에 실패했습니다.");
       }
 
-      const result = await response.json(); // { retweeted: boolean, retweetCount: number }
+      const result = await response.json(); 
 
       setFeeds(prevFeeds => prevFeeds.map(feed => {
         if (feed.POST_ID === postId) {
@@ -253,14 +250,14 @@ function Feed() {
         USER_ID: userId,
         CONTENT: trimmedComment,
         USERNAME: '나',
-        PROFILE_IMG: selectedFeed?.PROFILE_IMAGE_URL || '/default-avatar.png' // PROFILE_IMG로 키 수정
+        PROFILE_IMG: selectedFeed?.PROFILE_IMAGE_URL || '/default-avatar.png' 
       };
 
       if (open && selectedFeed?.POST_ID === postId) {
         setComments(prev => [...prev, newCommentData]);
       }
 
-      // 댓글 작성 후, 메인 피드 목록을 새로고침하여 댓글 수 업데이트
+     
       fnFeeds();
 
       setNewComment('');

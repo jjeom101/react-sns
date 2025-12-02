@@ -13,15 +13,13 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// array 는 여러개 한개는 siggle
+
 router.post('/upload', upload.array('file'), async (req, res) => {
 
-    let  mediaType  = req.body.MEDIA_TYPE;
-    console.log("req.body upload file ====>", req.body);
+    let mediaType = req.body.MEDIA_TYPE;
     const postId = req.body.POST_ID;
     const files = req.files;
-    console.log("클라이언트가 전송한 MEDIA_TYPE:", mediaType);
-    console.log(files);
+    
     if (!files || files.length === 0 || !postId) {
         return res.status(400).json({ msg: "파일 또는 POST_ID가 누락되었습니다." });
     }
@@ -69,7 +67,6 @@ router.delete("/:POST_ID", authMiddleware, async (req, res) => {
 router.post("/", upload.array('files'), async (req, res) => {
     let { userId, content, mediaType } = req.body;
     const files = req.files;
-    console.log("req.body ====>", req.body);
 
     let sql;
     let values;
@@ -80,15 +77,15 @@ router.post("/", upload.array('files'), async (req, res) => {
         values = [userId, content, mediaType];
         
     } else {
-  
+ 
         sql = "INSERT INTO SNS_POSTS (USER_ID, CONTENT) VALUES (?, ?)";
         values = [userId, content];
     }
-   
+    
     try {
 
         let result = await db.query(sql, values);
-        console.log("게시물 삽입 성공:", result);
+        
         res.json({
             msg: "success",
             result: result
@@ -107,11 +104,11 @@ router.post("/comment", authMiddleware, async (req, res) => {
     if (!postId || !content || !currentUserId) {
         return res.status(400).json({ msg: "필수 정보(postId, content, userId)가 누락되었습니다." });
     }
-    console.log("postId,content,currentUserId",postId,content,currentUserId);
+    
     try {
     
         const sql = `
-           INSERT INTO SNS_COMMENTS (USER_ID, POST_ID, CONTENT) VALUES (?, ?, ?);
+            INSERT INTO SNS_COMMENTS (USER_ID, POST_ID, CONTENT) VALUES (?, ?, ?);
         `;
         
         const [result] = await db.query(sql, [currentUserId, postId, content]);
@@ -119,7 +116,7 @@ router.post("/comment", authMiddleware, async (req, res) => {
         if (result.affectedRows === 1) {
             res.json({
                 msg: "success",
-                commentId: result.insertId, // 새로 생성된 댓글 ID 반환
+                commentId: result.insertId, 
                 userId: currentUserId,
                 content: content
             });
@@ -141,17 +138,17 @@ router.get("/comments/:postId", async (req, res) => {
     }
 
     try {
-        // 💡 SNS_USERS 테이블을 사용하고, PROFILE_IMG 컬럼을 선택하도록 수정
+        
         const sql = `
             SELECT 
                 C.COMMENT_ID, 
                 C.CONTENT, 
                 C.CREATED_AT, 
                 C.USER_ID,
-                U.USERNAME,  
-                U.PROFILE_IMG AS PROFILE_IMAGE_URL  -- 💡 U.PROFILE_IMG로 수정하고 클라이언트와 일치하도록 별칭(Alias) 사용
+                U.USERNAME, 
+                U.PROFILE_IMG AS PROFILE_IMAGE_URL 
             FROM SNS_COMMENTS C
-            JOIN SNS_USERS U ON C.USER_ID = U.USER_ID  -- 💡 SNS_USERS 테이블 이름으로 수정
+            JOIN SNS_USERS U ON C.USER_ID = U.USER_ID 
             WHERE C.POST_ID = ?
             ORDER BY C.CREATED_AT ASC; 
         `;
@@ -294,7 +291,7 @@ router.post("/like", authMiddleware, async (req, res) => {
     let finalLikeCount = 0;
 
     try {
-     
+      
         const checkSql = `
             SELECT LIKE_ID FROM SNS_LIKES 
             WHERE USER_ID = ? AND ${targetField} = ?;
@@ -331,7 +328,7 @@ router.post("/like", authMiddleware, async (req, res) => {
             finalLikeCount = countResult[0].like_count;
         }
 
-  
+ 
         return res.json({ 
             msg: liked ? "like_added" : "like_removed", 
             liked: liked, 
@@ -376,7 +373,7 @@ router.post("/retweet", authMiddleware, async (req, res) => {
             await db.query(deleteSql, [currentUserId, targetId]);
             retweeted = false;
         } else {
-     
+    
             const insertSql = `
                 INSERT INTO SNS_RETWEETS (USER_ID, ${targetField}) 
                 VALUES (?, ?);

@@ -27,33 +27,31 @@ async function ensureConversationExists(user1, user2) {
 
 
     if (existing.length > 0) { 
-        console.log(`[ChatLog] 기존 대화방 찾음: ${existing[0].CONVERSATION_ID}`);
         return existing[0].CONVERSATION_ID;
     }
 
 
     const insertConvQuery = `INSERT INTO SNS_CONVERSATIONS (TYPE) VALUES ('DM')`; 
-    console.log('[ChatLog] 새로운 대화방 생성 시도...');
+    
     
     const [convResult] = await db.query(insertConvQuery);
     const newConvId = convResult.insertId;
 
     if (!newConvId) {
-        console.error("[ChatLog] 🚨 심각한 오류: 새로 생성된 CONVERSATION_ID를 가져오지 못했습니다. (DB AUTO_INCREMENT 확인 필요)");
         throw new Error("Failed to retrieve new conversation ID."); 
     }
-    console.log(`[ChatLog] 새로운 대화방 ID: ${newConvId}`);
+    
 
     const insertParticipantsQuery = `
         INSERT INTO SNS_PARTICIPANTS (CONVERSATION_ID, USER_ID, LAST_READ_AT)
         VALUES (?, ?, NOW()), (?, ?, NOW())
     `;
-    console.log(`[ChatLog] 참여자 등록 시도: ${users[0]}, ${users[1]}`);
+    
     await db.query(insertParticipantsQuery, [
         newConvId, users[0],
         newConvId, users[1]
     ]);
-    console.log('[ChatLog] 참여자 등록 성공.');
+    
 
     return newConvId;
 }
@@ -84,36 +82,28 @@ router.get("/list", authMiddleware, async (req, res) => {
 });
 
 router.get("/status", authMiddleware, async (req, res) => {
-    const { targetUserId } = req.query;  
+    const { targetUserId } = req.query;  
     const myId = req.user.userId; 
     
 
-    console.log("--- GET /follow/status 요청 시작 ---");
-    console.log(`요청자(myId): ${myId}, 대상(targetUserId): ${targetUserId}`);
-
     if (!targetUserId) {
-        console.log("오류: targetUserId가 누락되었습니다.");
         return res.status(400).json({ result: 'fail', msg: "targetUserId 필요함" });
     }
 
     if (!myId) {
-        console.log("오류: 인증 정보(myId)가 req.user.userId에 없습니다.");
         return res.status(401).json({ result: 'fail', msg: "인증 정보 누락" });
     }
 
     try {
-        let sql = `SELECT * FROM  SNS_FOLLOWS WHERE FOLLOWER_ID = ?`; 
+        let sql = `SELECT * FROM  SNS_FOLLOWS WHERE FOLLOWER_ID = ? AND FOLLOWING_ID = ?`; 
         
-        console.log(`DB 쿼리 실행: ${sql}`);
-        console.log(`파라미터: [${myId}, ${targetUserId}]`);
         
-        const [rows] = await db.query(sql, [myId]);
+        const [rows] = await db.query(sql, [myId, targetUserId]);
 
-        console.log("DB 쿼리 성공. 결과 행 수:", rows.length);
         
         const isFollowing = rows.length > 0;
 
-        console.log(`최종 응답: { result: "success", isFollowing: ${isFollowing} }`);
+        
         
         res.json({
             result: "success",
@@ -125,7 +115,6 @@ router.get("/status", authMiddleware, async (req, res) => {
         res.status(500).json({ result: 'fail', msg: "서버 오류" });
     }
     
-    console.log("--- GET /follow/status 요청 종료 ---");
 });
 
 
@@ -142,35 +131,35 @@ router.post("/", authMiddleware, async (req, res) => {
        const [exist] = await db.query(selectSql, [myId, targetUserId]);
 
         if (exist.length > 0) {
-            // --- 언팔로우 로직 ---
-            await db.query(`DELETE FROM SNS_FOLLOWS WHERE FOLLOWER_ID = ? AND FOLLOWING_ID = ?`, 
-                            [myId, targetUserId]);
             
-            // *주의: 언팔로우 시 대화방 삭제 여부는 서비스 정책에 따라 결정해야 합니다.
-            // *일반적으로는 삭제하지 않습니다.
+            await db.query(`DELETE FROM SNS_FOLLOWS WHERE FOLLOWER_ID = ? AND FOLLOWING_ID = ?`, 
+                             [myId, targetUserId]);
+            
+            
+            
 
             return res.json({
                 result: "success",
                 action: "unfollow"
             });
         } else {
-            // --- 팔로우 로직 (대화방 생성 위치!) ---
             
-            // 1. 팔로우 테이블에 레코드 삽입
+            
+            
             const [insert] = await db.query(`INSERT INTO SNS_FOLLOWS (FOLLOWER_ID, FOLLOWING_ID) VALUES (?, ?)`,
                 [myId, targetUserId]
             );
 
-            // 2. 대화방 생성 또는 기존 대화방 ID 조회
-            // ensureConversationExists 함수를 호출하여 대화방을 확보합니다.
+            
+            
             const conversationId = await ensureConversationExists(myId, targetUserId); 
 
-            // 3. 성공 응답 반환 (프론트엔드에서 사용할 수 있도록 conversationId 포함)
+            
             return res.json({
                 result: "success",
                 action: "follow",
                 insertId: insert.insertId,
-                conversationId: conversationId // 💡 프론트엔드에서 이 ID를 사용하여 채팅방으로 이동할 수 있습니다.
+                conversationId: conversationId 
             });
         }
 

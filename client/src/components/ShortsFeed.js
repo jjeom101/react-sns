@@ -25,7 +25,7 @@ function ShortsFeed() {
     const navigate = useNavigate();
     const videoRefs = useRef([]); 
 
-    // --- 1. 인증 및 사용자 ID 추출 로직 ---
+    
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (token) {
@@ -45,7 +45,7 @@ function ShortsFeed() {
         }
     }, [navigate]);
 
-    // --- 2. 쇼츠 목록 로드 함수 ---
+    
     const fetchShorts = async () => {
         const token = localStorage.getItem("token");
         if (!userId || !token) return;
@@ -76,7 +76,7 @@ function ShortsFeed() {
     }, [userId]);
 
 
-    // --- 3. 조회수 증가 및 자동 재생 처리 로직 ---
+    
     useEffect(() => {
         if (shorts.length === 0) return;
 
@@ -132,7 +132,7 @@ function ShortsFeed() {
                 headers: { "Authorization": `Bearer ${token}` }
             });
 
-            // 조회수 즉시 업데이트
+            
             setShorts(prev => prev.map(s => 
                 s.SHORT_ID.toString() === shortId.toString() ? { ...s, VIEW_COUNT: (s.VIEW_COUNT || 0) + 1 } : s
             ));
@@ -141,31 +141,37 @@ function ShortsFeed() {
         }
     };
 
-    // ⭐️ 좋아요 토글 핸들러 함수 
-    const handleLikeToggle = async (shortId, isLiked) => {
+    
+    const handleLikeToggle = async (shortId) => {
         const token = localStorage.getItem("token");
         if (!token || !shortId) return;
 
         try {
-            const endpoint = `${SERVER_URL}/shorts/like/${shortId}`;
-
+            
+            const endpoint = `${SERVER_URL}/shorts/like`; 
+            
             const response = await fetch(endpoint, {
                 method: "POST",
-                headers: { "Authorization": `Bearer ${token}` }
+                headers: { 
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json" 
+                },
+                
+                body: JSON.stringify({ shortId: shortId }) 
             });
             
             if (!response.ok) throw new Error("좋아요 처리 실패");
 
             const data = await response.json(); 
-            const newAction = data.action;
-            const newLikeCount = data.like_count;
+            const newAction = data.msg; 
+            const newLikeCount = data.likeCount; 
 
-            // 상태 업데이트: 좋아요 수와 좋아요 여부를 서버 응답을 기준으로 업데이트
+            
             setShorts(prev => prev.map(s => {
                 if (s.SHORT_ID.toString() === shortId.toString()) {
                     return { 
                         ...s, 
-                        IS_LIKED: newAction === 'liked' ? 1 : 0, 
+                        IS_LIKED: newAction === 'like_added' ? 1 : 0, 
                         like_count: newLikeCount
                     };
                 }
@@ -174,20 +180,21 @@ function ShortsFeed() {
 
         } catch (error) {
             console.error("좋아요 토글 오류:", error);
+            alert("좋아요 처리 중 오류가 발생했습니다.");
         }
     };
 
-    // --- 4. 렌더링 (70% 너비 적용) ---
+    
     return (
-        // ⭐️ 스타일 수정: 최대 너비를 70%로 설정하고 중앙 정렬합니다.
+        
         <div style={{ 
             height: '100vh', 
             overflowY: 'scroll', 
-            maxWidth: '40%', // 70% 너비 적용
-            margin: '0 auto', // 중앙 정렬
-            border: '1px solid #ddd' // 모바일 프레임처럼 보이기 위한 테두리 추가 (선택 사항)
+            maxWidth: '40%', 
+            margin: '0 auto', 
+            border: '1px solid #ddd' 
         }}>
-            <AppBar position="fixed" sx={{ width: 'inherit' }}> {/* 너비를 부모 div와 동일하게 설정 */}
+            <AppBar position="fixed" sx={{ width: 'inherit' }}> 
                 <Toolbar>
                     <Typography variant="h6">SNS Shorts</Typography>
                 </Toolbar>
@@ -201,7 +208,7 @@ function ShortsFeed() {
                         data-index={index}
                         data-short-id={short.SHORT_ID}
                     >
-                        {/* 비디오 요소 */}
+                        
                         <video
                             ref={el => videoRefs.current[index] = el}
                             id={`video-${short.SHORT_ID}`}
@@ -210,9 +217,18 @@ function ShortsFeed() {
                             muted 
                             playsInline
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            
+                            onClick={() => {
+                                const video = videoRefs.current[index];
+                                if (video.paused) {
+                                    video.play();
+                                } else {
+                                    video.pause();
+                                }
+                            }}
                         />
 
-                        {/* 오버레이 UI */}
+                        
                         <Box sx={{ 
                             position: 'absolute', 
                             bottom: 0, 
@@ -224,41 +240,35 @@ function ShortsFeed() {
                             <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
                                 @{short.USER_ID}
                             </Typography>
+                            
                             <Typography variant="body2" sx={{ mb: 1 }}>
-                                {short.DESCRIPTION}
+                                {short.DESCRIPTION || short.CONTENT} 
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 2 }}>
-                                {/* 좋아요 버튼 */}
+                                
                                 <IconButton 
                                     sx={{ color: short.IS_LIKED === 1 ? 'red' : 'white' }} 
-                                    onClick={() => handleLikeToggle(short.SHORT_ID, short.IS_LIKED)}
+                                    
+                                    onClick={() => handleLikeToggle(short.SHORT_ID)}
                                 >
                                     {short.IS_LIKED === 1 ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                                     <Typography variant="caption" sx={{ ml: 0.5 }}>{short.like_count || 0}</Typography>
                                 </IconButton>
-                                {/* 댓글 버튼 */}
+                                
                                 <IconButton sx={{ color: 'white' }}>
                                     <CommentIcon />
                                 </IconButton>
-                                {/* 조회수 표시 */}
+                                
                                 <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
                                     <VisibilityIcon fontSize="small" />
                                     <Typography variant="caption" sx={{ ml: 0.5 }}>{short.VIEW_COUNT || 0}</Typography>
                                 </Box>
-                                {/* 재생/일시정지 버튼 */}
+                                
                                 <IconButton 
                                     sx={{ color: 'white' }} 
-                                    onClick={() => {
-                                        const video = videoRefs.current[index];
-                                        if (video.paused) {
-                                            video.play();
-                                        } else {
-                                            video.pause();
-                                        }
-                                    }}
+                                    
                                 >
-                                    {currentPlayingIndex === index && videoRefs.current[index]?.paused === false 
-                                        ? <PauseIcon /> : <PlayArrowIcon />}
+                                    
                                 </IconButton>
                             </Box>
                         </Box>

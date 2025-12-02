@@ -142,7 +142,7 @@ function Register() {
                 onChange={handleChange}
             >
             <MenuItem value={1}>게시글</MenuItem>
-            {/* 쇼츠 항목 제거됨 */}
+         
             <MenuItem value={3}>사진</MenuItem>
           </Select>
         </FormControl>
@@ -158,7 +158,6 @@ function Register() {
           rows={4}
         />
 
-        {/* mediaType이 'I' (사진)일 때만 파일 첨부 UI 표시 */}
         {mediaType === 'I' && (
             <Box display="flex" alignItems="center" margin="normal" sx={{ width: '100%' }}>
                 <input

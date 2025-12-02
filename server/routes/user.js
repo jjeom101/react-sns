@@ -6,11 +6,9 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-// const authMiddleware = require('../middleware/auth');
 
 
 
-// 해시 함수 실행 위해 사용할 키로 아주 긴 랜덤한 문자를 사용하길 권장하며, 노출되면 안됨.
 const JWT_KEY = "server_secret_key";
 const uploadDir = path.join(__dirname, '..', 'uploads', 'profile_images');
 router.post('/join', async (req, res) => {
@@ -65,8 +63,7 @@ router.post('/login', async (req, res) => {
         } else {
             msg = "아이디를 확인해주세요!";
         }
-        // -------------------------------------------------------------
-
+        
         if (list.length > 0) {
 
             const match = await bcrypt.compare(pwd, list[0].PASSWORD);
@@ -245,11 +242,11 @@ const upload = multer({ storage: storage });
 
 
 router.post('/profile/image', upload.single('profileImage'), async (req, res) => {
-    // upload.single('profileImage'): 프론트에서 FormData에 'profileImage'라는 이름으로 보낸 파일을 처리합니다.
+    
 
     const userId = req.body.userId;
 
-    // 파일이 저장된 서버상의 경로
+    
     const relativePath = req.file ? `/uploads/profile_images/${req.file.filename}` : null;
 
     if (!relativePath) {
@@ -257,11 +254,11 @@ router.post('/profile/image', upload.single('profileImage'), async (req, res) =>
     }
 
     try {
-        // ⭐️ DB 업데이트 쿼리
+        
         const updateQuery = `UPDATE SNS_USERS  SET PROFILE_IMG = ? WHERE USER_ID = ?`;
         await db.query(updateQuery, [relativePath, userId]);
 
-        // 성공 응답. 프론트에서 fnGetUser를 호출해 갱신하도록 유도합니다.
+        
         res.status(200).json({
             result: 'success',
             msg: '프로필 사진이 성공적으로 업데이트되었습니다.',
@@ -270,18 +267,17 @@ router.post('/profile/image', upload.single('profileImage'), async (req, res) =>
 
     } catch (e) {
         console.error("프로필 이미지 DB 업데이트 오류:", e);
-        // 업로드된 파일도 삭제하는 로직을 추가해야 하지만, 여기서는 생략합니다.
+        
         res.status(500).json({ result: 'fail', msg: 'DB 업데이트 중 서버 오류가 발생했습니다.' });
     }
 });
 
 
-//  획득 배지 목록 조회 
 router.get('/:userId/badges', async (req, res) => {
     const { userId } = req.params;
 
     try {
-        // SNS_USER_BADGE와 SNS_BADGE 테이블을 조인하여, 획득한 배지 정보를 가져옵니다.
+        
         let sql = `
             SELECT 
                 UB.BADGE_ID,
@@ -313,7 +309,6 @@ router.get('/:userId/badges', async (req, res) => {
     }
 });
 
-//  배지 착용 설정 
 router.put('/badge/active', async (req, res) => {
 
     const { badgeId, userId } = req.body;
@@ -353,6 +348,51 @@ router.put('/badge/active', async (req, res) => {
         res.status(500).json({
             msg: "fail",
             error: "배지 착용 설정 중 서버 오류가 발생했습니다."
+        });
+    }
+});
+
+router.get('/:userId/posts', async (req, res) => {
+    const { userId } = req.params;
+
+    // TODO: 필요하다면 JWT를 이용한 인증/인가 미들웨어를 여기에 추가해야 합니다.
+    // 현재는 로그인 상태임을 가정하고 조회만 합니다.
+
+    try {
+        // 특정 사용자가 작성한 게시물(SNS_POSTS)과 해당 게시물에 연결된 첫 번째 미디어 파일(SNS_MEDIA_FILES)의
+        // URL을 조회하여 썸네일로 사용합니다.
+        let sql = `
+          SELECT
+    P.POST_ID,
+    P.CONTENT,
+    P.CREATED_AT,
+    MF.FILE_URL
+FROM SNS_POSTS P
+LEFT JOIN SNS_MEDIA_FILES MF ON P.POST_ID = MF.POST_ID
+LEFT JOIN (
+    SELECT POST_ID, MIN(DISPLAY_ORDER) as min_display_order
+    FROM SNS_MEDIA_FILES
+    GROUP BY POST_ID
+) AS MinOrder ON MF.POST_ID = MinOrder.POST_ID AND MF.DISPLAY_ORDER = MinOrder.min_display_order
+WHERE P.USER_ID = ?
+AND (MinOrder.POST_ID IS NOT NULL OR MF.POST_ID IS NULL)
+ORDER BY P.CREATED_AT DESC
+LIMIT 0, 1000;
+        `;
+        
+        let [posts] = await db.query(sql, [userId]);
+
+        res.json({
+            msg: "success",
+            posts: posts,
+            count: posts.length
+        });
+
+    } catch (error) {
+        console.error("사용자 게시물 목록 조회 중 에러 발생:", error);
+        res.status(500).json({
+            msg: "fail",
+            error: "게시물 목록 조회 중 서버 오류가 발생했습니다."
         });
     }
 });
