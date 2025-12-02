@@ -1,8 +1,9 @@
-require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const path = require('path');
+require("dotenv").config();
 
 const http = require('http');
 const { Server } = require('socket.io');
