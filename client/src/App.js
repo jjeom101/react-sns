@@ -12,6 +12,7 @@ import Follow from './components/Follow';
 import ChatList from './components/ChatList';
 import ShortsFeed from './components/ShortsFeed';
 import ShortsRegister from './components/shortsRegister.js';
+import DailyMissionPage from './components/DailyMissionPage.js';
 
 
 
@@ -39,6 +40,7 @@ function App() {
           
           <Route path="/chat/list" element={<ChatList />} />
           <Route path="/ShortsFeed" element={<ShortsFeed />} />
+          <Route path="/DailyMissionPage" element={<DailyMissionPage />} />
           
           
 

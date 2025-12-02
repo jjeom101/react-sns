@@ -183,7 +183,7 @@ function ShortsFeed() {
         <div style={{ 
             height: '100vh', 
             overflowY: 'scroll', 
-            maxWidth: '70%', // 70% 너비 적용
+            maxWidth: '40%', // 70% 너비 적용
             margin: '0 auto', // 중앙 정렬
             border: '1px solid #ddd' // 모바일 프레임처럼 보이기 위한 테두리 추가 (선택 사항)
         }}>

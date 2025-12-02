@@ -15,8 +15,8 @@ function Follow() {
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [followingStatus, setFollowingStatus] = useState({});
-    
-    
+
+
     const navigate = useNavigate();
 
 
@@ -41,9 +41,9 @@ function Follow() {
 
         const token = localStorage.getItem("token");
 
-       fetch(`http://localhost:3010/follow/list`, {
+        fetch(`http://localhost:3010/follow/list`, {
             headers: {
-               "Authorization": `Bearer ${token}`
+                "Authorization": `Bearer ${token}`
             }
         })
             .then(res => {
@@ -74,7 +74,7 @@ function Follow() {
             });
     }
 
-  
+
     function fetchFollowStatus(targetUserId) {
         if (!userId) {
             alert("로그인 정보가 유효하지 않습니다.");
@@ -141,7 +141,7 @@ function Follow() {
         }
     }, [navigate]);
 
-   
+
     useEffect(() => {
         if (userId) {
             fetchAllUsers();
@@ -189,11 +189,14 @@ function Follow() {
                                                 {isFollowing ? '팔로우 중' : '팔로우'}
                                             </Button>
                                         }
-                                       
+
                                         onClick={() => navigate(`/user/${targetId}`)}
                                     >
                                         <ListItemAvatar>
-                                            <Avatar src={user.PROFILE_IMG || ""} />
+                                            <Avatar
+                                                src={user.PROFILE_IMG ? `http://localhost:3010${user.PROFILE_IMG}` : "/default-profile.png"}
+                                                alt={user.NICKNAME || user.USERNAME}
+                                            />
                                         </ListItemAvatar>
 
                                         <ListItemText
@@ -210,7 +213,7 @@ function Follow() {
                 </List>
             </Paper>
         </Container>
-        </Container>
+    </Container>
     );
 }
 

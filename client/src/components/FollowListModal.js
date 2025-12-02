@@ -77,7 +77,7 @@ function FollowListModal({ isOpen, onClose, title, list }) {
         //         alert("채팅방을 여는 데 실패했습니다.");
         //     });
     };
-return (
+    return (
         <Modal
             open={isOpen}
             onClose={onClose}
@@ -92,39 +92,43 @@ return (
                         <CloseIcon />
                     </IconButton>
                 </Box>
-                
+
                 {list.length === 0 && !isProcessing ? (
                     <Typography sx={{ mt: 2, textAlign: 'center' }}>
                         목록을 불러오는 중이거나 비어있습니다.
                     </Typography>
                 ) : (
                     <List sx={{ mt: 2 }}>
-                        
+
                         {isProcessing ? (
                             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
                                 <CircularProgress />
                                 <Typography sx={{ ml: 2, alignSelf: 'center' }}>채팅방을 준비 중입니다...</Typography>
                             </Box>
                         ) : (
-                             list.map((item) => (
-                                <ListItem 
-                                    key={item.USER_ID} 
-                                    secondaryAction={ 
-                                        <IconButton 
-                                            edge="end" 
+                            list.map((item) => (
+                                <ListItem
+                                    key={item.USER_ID}
+                                    secondaryAction={
+                                        <IconButton
+                                            edge="end"
                                             aria-label="채팅"
-                                            onClick={() => handleChatClick(item.USER_ID, item.NICKNAME || item.USERNAME)} 
+                                            onClick={() => handleChatClick(item.USER_ID, item.NICKNAME || item.USERNAME)}
                                         >
-                                            <ChatIcon /> 
+                                            <ChatIcon />
                                         </IconButton>
                                     }
-                                > 
+                                >
                                     <ListItemAvatar>
-                                        <Avatar src={item.PROFILE_IMG} />
+                                        <Avatar
+
+                                            src={item.PROFILE_IMG ? `http://localhost:3010${item.PROFILE_IMG}` : "/default-profile.png"}
+                                            alt={item.NICKNAME || item.USERNAME}
+                                        />
                                     </ListItemAvatar>
-                                    <ListItemText 
-                                        primary={item.NICKNAME || item.USERNAME} 
-                                        secondary={`@${item.USER_ID}`} 
+                                    <ListItemText
+                                        primary={item.NICKNAME || item.USERNAME}
+                                        secondary={`@${item.USER_ID}`}
                                     />
                                 </ListItem>
                             ))

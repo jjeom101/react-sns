@@ -15,6 +15,7 @@ const feedRouter = require("./routes/feed");
 const chatRouter = require("./routes/chat");
 const followRouter = require('./routes/follow');
 const shortRouter = require("./routes/short");
+const missionRouter = require("./routes/mission");
 
 const app = express();
 app.use(cors({
@@ -32,6 +33,7 @@ app.use("/feed", feedRouter);
 app.use("/chat", chatRouter);
 app.use("/follow", followRouter);
 app.use("/shorts", shortRouter);
+app.use("/mission", missionRouter);
 
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {

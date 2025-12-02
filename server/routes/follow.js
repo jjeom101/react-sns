@@ -142,30 +142,35 @@ router.post("/", authMiddleware, async (req, res) => {
        const [exist] = await db.query(selectSql, [myId, targetUserId]);
 
         if (exist.length > 0) {
-            
+            // --- 언팔로우 로직 ---
             await db.query(`DELETE FROM SNS_FOLLOWS WHERE FOLLOWER_ID = ? AND FOLLOWING_ID = ?`, 
                             [myId, targetUserId]);
             
-            
+            // *주의: 언팔로우 시 대화방 삭제 여부는 서비스 정책에 따라 결정해야 합니다.
+            // *일반적으로는 삭제하지 않습니다.
+
             return res.json({
                 result: "success",
                 action: "unfollow"
             });
         } else {
+            // --- 팔로우 로직 (대화방 생성 위치!) ---
             
-            
+            // 1. 팔로우 테이블에 레코드 삽입
             const [insert] = await db.query(`INSERT INTO SNS_FOLLOWS (FOLLOWER_ID, FOLLOWING_ID) VALUES (?, ?)`,
                 [myId, targetUserId]
             );
 
-            
+            // 2. 대화방 생성 또는 기존 대화방 ID 조회
+            // ensureConversationExists 함수를 호출하여 대화방을 확보합니다.
             const conversationId = await ensureConversationExists(myId, targetUserId); 
 
+            // 3. 성공 응답 반환 (프론트엔드에서 사용할 수 있도록 conversationId 포함)
             return res.json({
                 result: "success",
                 action: "follow",
                 insertId: insert.insertId,
-                conversationId: conversationId
+                conversationId: conversationId // 💡 프론트엔드에서 이 ID를 사용하여 채팅방으로 이동할 수 있습니다.
             });
         }
 
