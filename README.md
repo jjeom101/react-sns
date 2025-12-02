@@ -131,7 +131,8 @@ Gemini API를 통해 운동 추천까지 제공하는 **운동 특화 SNS 플랫
 * SNS_DAILY_MISSIONS
 * SNS_USER_MISSION_STATUS
 
-(원하면 ERD 이미지 제작해 드립니다)
+<img width="779" height="828" alt="image" src="https://github.com/user-attachments/assets/33199054-ad13-4e98-9e5a-8ea582bc928a" />
+
 
 ---
 
