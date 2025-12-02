@@ -1,6 +1,6 @@
 
 
-# 🎉 SNS 프로젝트 (Social Fitness SNS)
+# 🎉 SNS 프로젝트 
 
 사용자가 운동 관련 정보를 공유하고, DM 채팅, 쇼츠, 팔로우 시스템, 배지 시스템 등 다양한 기능을 제공하는 **소셜 네트워크 서비스 프로젝트**입니다.
 Gemini API를 통해 운동 추천까지 제공하는 **운동 특화 SNS 플랫폼**을 목표로 합니다.
@@ -131,7 +131,8 @@ Gemini API를 통해 운동 추천까지 제공하는 **운동 특화 SNS 플랫
 * SNS_DAILY_MISSIONS
 * SNS_USER_MISSION_STATUS
 
-(원하면 ERD 이미지 제작해 드립니다)
+<img width="779" height="828" alt="image" src="https://github.com/user-attachments/assets/33199054-ad13-4e98-9e5a-8ea582bc928a" />
+
 
 ---
 
@@ -173,10 +174,8 @@ node server.js
 ## ⭐ 향후 업데이트 예정 기능
 
 * 그룹 채팅
-* 해시태그 검색
 * 운동 루틴 자동 저장 기능
-* 피드 추천 알고리즘
+
 
 ---
 
-원하면 README에 들어갈 **ERD 이미지, 기술 스택 아이콘 버전, 시연 GIF, 영어 버전**까지 만들어줄게!
