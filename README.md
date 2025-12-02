@@ -1,171 +1,182 @@
 
-// 임시 
-🎉 SNS 프로젝트 (Social Fitness SNS)
 
-사용자가 운동 관련 정보를 공유하고, DM 채팅, 쇼츠, 팔로우 시스템, 배지 시스템 등 다양한 기능을 제공하는 소셜 네트워크 서비스 프로젝트입니다.
-Gemini API를 통해 운동 추천까지 제공하는 운동 특화 SNS 플랫폼을 목표로 합니다.
+# 🎉 SNS 프로젝트 (Social Fitness SNS)
 
-🚀 주요 기능
-🧑‍💻 1. 회원 & 인증
+사용자가 운동 관련 정보를 공유하고, DM 채팅, 쇼츠, 팔로우 시스템, 배지 시스템 등 다양한 기능을 제공하는 **소셜 네트워크 서비스 프로젝트**입니다.
+Gemini API를 통해 운동 추천까지 제공하는 **운동 특화 SNS 플랫폼**을 목표로 합니다.
 
-회원가입
+---
 
-로그인
+## 🚀 주요 기능
 
-JWT 기반 인증 처리
+### 🧑‍💻 1. 회원 & 인증
 
-사용자 프로필 이미지 업로드
+* 회원가입
+* 로그인
+* JWT 기반 인증
+* 사용자 프로필 이미지 업로드
 
-📝 2. 게시글 기능
+---
 
-게시글 작성 / 등록
+### 📝 2. 게시글 기능
 
-게시글 목록 조회 (피드)
+* 게시글 작성 / 등록
+* 게시글 목록 조회(피드)
+* 게시글 상세 보기
+* 게시글 삭제
+* 게시글 좋아요
+* 게시글 댓글
+* 리트윗(공유) 기능
 
-게시글 상세 보기
+---
 
-게시글 삭제
+### 🎬 3. 쇼츠 (Shorts)
 
-게시글 좋아요 기능
+* 쇼츠 업로드
+* 쇼츠 피드 조회
 
-게시글 댓글 작성
+---
 
-리트윗(공유) 기능
+### ☑️ 4. 일일 미션 시스템
 
-🎬 3. 쇼츠 (Shorts)
+* 일일 미션 목록 제공
+* 미션 완료 처리
+* **미션 클리어 시 배지 지급 연동**
 
-쇼츠 업로드 기능
+---
 
-쇼츠 피드 조회 (짧은 영상 기반)
+### 🏅 5. 배지 시스템
 
-☑️ 4. 일일 미션 시스템
+* 조건 달성 시 배지 획득
+* 마이페이지에서 보유 배지 확인
+* 대표 배지(Active Badge) 설정
 
-매일 제공되는 일일 미션 목록 표시
+---
 
-미션 클리어 시 보상 지급
+### 👥 6. 팔로우 / 팔로잉
 
-일일 미션 완료 시 배지 지급 연동
+* 팔로우 / 언팔로우
+* 팔로우·팔로잉 목록 모달 창 제공
+* 마이페이지에서 즉시 확인 가능
 
-🏅 5. 배지 시스템
+---
 
-특정 조건 달성 시 배지 획득
+### 💬 7. 1:1 채팅 시스템
 
-마이페이지에서 보유 배지 확인
+* 1:1 DM 채팅방 생성
+* WebSocket 기반 실시간 메시지 송수신
+* 메시지 읽음 처리
+* 대화 목록 조회
 
-대표 배지(Active Badge) 설정 기능
+---
 
-👥 6. 팔로우 / 팔로잉
+### 🔍 8. Gemini AI 운동 추천
 
-사용자 팔로우 / 언팔로우
+* “등 운동 추천” 같이 메시지를 입력하면
+  → Gemini API를 이용해 운동 루틴 자동 추천
 
-팔로우/팔로잉 목록 모달 띄우기
+---
 
-마이페이지에서 즉시 조회 가능
+### 📱 9. 사용자 페이지
 
-💬 7. 1:1 채팅 시스템
+* 마이페이지
 
-DM 채팅방 자동 생성
+  * 프로필 이미지
+  * 닉네임 / 소개
+  * 게시글 수
+  * 팔로워 / 팔로잉 수
+  * 대표 배지 표시
+  * 오늘의 일일 미션 요약
 
-실시간 메시지 송신/수신 (WebSocket 기반)
+---
 
-메시지 읽음 처리
+## 🗂 기술 스택
 
-대화 목록 조회 기능
+### **Frontend**
 
-🔍 8. Gemini AI 운동 추천
+* React
+* Material UI (MUI)
+* React Router DOM
+* Axios
+* Socket.io-client
 
-사용자가 DM 또는 검색창에 "등 운동 추천" 등 요청 시
-→ Gemini API를 이용해 운동 루틴 자동 추천
+### **Backend**
 
-📱 9. 사용자 페이지
+* Node.js (Express)
+* MySQL
+* Socket.io
+* JWT 인증
+* Gemini API 연동
 
-마이페이지
+### **Infra / 기타**
 
-프로필 이미지, 닉네임, 소개
+* Multer (이미지 업로드)
+* MySQL Workbench
 
-게시글 수
+---
 
-팔로워/팔로잉 수
-
-대표 배지 표시
-
-일일 미션 요약 표시
-
-🗂️ 기술 스택
-Frontend
-
-React
-
-React Router DOM
-
-Material UI (MUI)
-
-Socket.io-client
-
-Axios
-
-Backend
-
-Node.js (Express)
-
-MySQL
-
-Socket.io
-
-JWT 인증
-
-Gemini API 연동
-
-Infra
-
-Multer (이미지 업로드)
-
-MySQL Workbench
-
-📊 DB 구조(요약)
-
-(원하면 ERD 이미지 만들어줄게)
+## 📊 DB 구조(요약)
 
 주요 테이블:
 
-SNS_USERS
+* SNS_USERS
+* SNS_POSTS
+* SNS_COMMENTS
+* SNS_FOLLOWS
+* SNS_MESSAGES
+* SNS_CONVERSATIONS
+* SNS_SHORTS
+* SNS_BADGES
+* SNS_USER_BADGE
+* SNS_DAILY_MISSIONS
+* SNS_USER_MISSION_STATUS
 
-SNS_POSTS
+(원하면 ERD 이미지 제작해 드립니다)
 
-SNS_COMMENTS
+---
 
-SNS_FOLLOWS
+## 📁 프로젝트 구조
 
-SNS_MESSAGES
+```
+project/
+ ├── backend/
+ │   ├── routes/
+ │   ├── controllers/
+ │   ├── db/
+ │   └── server.js
+ └── frontend/
+     ├── components/
+     ├── pages/
+     └── App.js
+```
 
-SNS_CONVERSATIONS
+---
 
-SNS_SHORTS
+## 🧪 설치 및 실행
 
-SNS_BADGES
+### Frontend
 
-SNS_USER_BADGE
+```
+npm install
+npm start
+```
 
-SNS_DAILY_MISSIONS
+### Backend
 
-SNS_USER_MISSION_STATUS
+```
+npm install
+node server.js
+```
 
-🧩 API 주요 목록
+---
 
-(요청 시 전체 API 문서 형태로 정리해줄 수 있음.)
+## ⭐ 향후 업데이트 예정 기능
 
-/auth/login
+* 그룹 채팅
+* 해시태그 검색
+* 운동 루틴 자동 저장 기능
+* 피드 추천 알고리즘
 
-/auth/register
+---
 
-/posts/...
-
-/shorts/...
-
-/chat/...
-
-/follow/...
-
-/missions/daily
-
-/badge/...
+원하면 README에 들어갈 **ERD 이미지, 기술 스택 아이콘 버전, 시연 GIF, 영어 버전**까지 만들어줄게!
