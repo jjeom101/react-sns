@@ -172,12 +172,11 @@ router.get("/comments/:postId", async (req, res) => {
 router.get("/all", authMiddleware, async (req, res) => {
     const currentUserId = req.user && (req.user.userId || req.user.id || req.user.user_id); 
 
-    if (!currentUserId) {
-        return res.status(401).json({ msg: "인증 정보가 유효하지 않습니다." });
-    }
+    if (!currentUserId) {
+        return res.status(401).json({ msg: "인증 정보가 유효하지 않습니다." });
+    }
 
-    try {
-const sql = `
+    try {const sql = `
 SELECT
     P.POST_ID AS POST_ID,
     P.USER_ID AS USER_ID,
@@ -186,6 +185,8 @@ SELECT
     P.CONTENT,
     P.CREATED_AT AS SORT_DATE,
     MF.FILE_URL,
+    B.BADGE_IMG AS ACTIVE_BADGE_IMG,
+    B.BADGE_NAME AS ACTIVE_BADGE_NAME,
     NULL AS RETWEET_USER_ID,
     NULL AS RETWEET_USERNAME,
     0 AS IS_RETWEET,
@@ -199,12 +200,16 @@ JOIN
     SNS_USERS U_ORIGINAL ON P.USER_ID = U_ORIGINAL.USER_ID
 LEFT JOIN
     SNS_MEDIA_FILES MF ON P.POST_ID = MF.POST_ID AND MF.DISPLAY_ORDER = 1
+LEFT JOIN
+    SNS_USER_BADGE UB ON U_ORIGINAL.USER_ID = UB.USER_ID AND UB.IS_ACTIVE = 1
+LEFT JOIN
+    SNS_BADGE B ON UB.BADGE_ID = B.BADGE_ID
 LEFT JOIN 
     SNS_LIKES L ON P.POST_ID = L.POST_ID
 LEFT JOIN 
     SNS_RETWEETS R ON P.POST_ID = R.POST_ID
 GROUP BY
-    P.POST_ID, P.USER_ID, U_ORIGINAL.USERNAME, U_ORIGINAL.PROFILE_IMG, P.CONTENT, P.CREATED_AT, MF.FILE_URL
+    P.POST_ID, P.USER_ID, U_ORIGINAL.USERNAME, U_ORIGINAL.PROFILE_IMG, P.CONTENT, P.CREATED_AT, MF.FILE_URL, B.BADGE_IMG, B.BADGE_NAME
 
 UNION ALL
 
@@ -216,6 +221,8 @@ SELECT
     P.CONTENT,
     R.CREATED_AT AS SORT_DATE,
     MF.FILE_URL,
+    B.BADGE_IMG AS ACTIVE_BADGE_IMG,
+    B.BADGE_NAME AS ACTIVE_BADGE_NAME,
     R.USER_ID AS RETWEET_USER_ID,
     U_RETWEET.USERNAME AS RETWEET_USERNAME,
     1 AS IS_RETWEET,
@@ -233,6 +240,10 @@ JOIN
     SNS_USERS U_RETWEET ON R.USER_ID = U_RETWEET.USER_ID
 LEFT JOIN
     SNS_MEDIA_FILES MF ON P.POST_ID = MF.POST_ID AND MF.DISPLAY_ORDER = 1
+LEFT JOIN
+    SNS_USER_BADGE UB ON U_ORIGINAL.USER_ID = UB.USER_ID AND UB.IS_ACTIVE = 1
+LEFT JOIN
+    SNS_BADGE B ON UB.BADGE_ID = B.BADGE_ID
 LEFT JOIN 
     (
         SELECT
@@ -255,18 +266,17 @@ WHERE
 ORDER BY
     SORT_DATE DESC
 `.trim(); 
-        
-const cleanSql = sql.replace(/\s+/g, ' ').trim();
-   
-        const [list] = await db.query(cleanSql, [currentUserId, currentUserId,currentUserId,currentUserId,currentUserId,currentUserId]); 
-        
+        const cleanSql = sql.replace(/\s+/g, ' ').trim();
+    
+        const [list] = await db.query(cleanSql, [currentUserId, currentUserId, currentUserId, currentUserId, currentUserId, currentUserId]); 
+        
     
 
-        res.json({ msg: "success", list: list });
-    } catch (error) {
-        console.error("피드 조회 오류:", error);
-        res.status(500).json({ msg: "피드 조회 실패", error: error.message });
-    }
+        res.json({ msg: "success", list: list });
+    } catch (error) {
+        console.error("피드 조회 오류:", error);
+        res.status(500).json({ msg: "피드 조회 실패", error: error.message });
+    }
 });
 router.post("/like", authMiddleware, async (req, res) => {
     const currentUserId = req.user?.userId || req.user?.id || req.user?.user_id;

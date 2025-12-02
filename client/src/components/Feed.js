@@ -85,6 +85,11 @@ function Feed() {
 
             // 🚨 IS_LIKED -> is_liked로 수정되었는지 확인하세요.
             console.log(`- 현재 사용자 좋아요 여부 (IS_LIKED): ${feed.is_liked}`);
+            
+            // ⭐️ 추가된 배지 콘솔 출력
+            console.log(`- 배지 이미지 경로 (ACTIVE_BADGE_IMG): ${feed.ACTIVE_BADGE_IMG}`);
+            console.log(`- 배지 이름 (ACTIVE_BADGE_NAME): ${feed.ACTIVE_BADGE_NAME}`);
+            // ⭐️
 
             // 💡 만약 like_count가 undefined라면, 원본 이름을 확인해 봅시다.
             console.log(`- 서버에서 넘어온 전체 객체: `, feed);
@@ -95,6 +100,7 @@ function Feed() {
 
       })
       .catch(error => {
+        console.error("피드 로드 오류:", error);
       });
   }
 
@@ -247,13 +253,14 @@ function Feed() {
         USER_ID: userId,
         CONTENT: trimmedComment,
         USERNAME: '나',
-        PROFILE_IMAGE_URL: selectedFeed?.PROFILE_IMAGE_URL || '/default-avatar.png'
+        PROFILE_IMG: selectedFeed?.PROFILE_IMAGE_URL || '/default-avatar.png' // PROFILE_IMG로 키 수정
       };
 
       if (open && selectedFeed?.POST_ID === postId) {
         setComments(prev => [...prev, newCommentData]);
       }
 
+      // 댓글 작성 후, 메인 피드 목록을 새로고침하여 댓글 수 업데이트
       fnFeeds();
 
       setNewComment('');
@@ -320,20 +327,39 @@ function Feed() {
                     avatar={
                       <Avatar
                         src={feed.PROFILE_IMAGE_URL
-                          ? `http://localhost:3010${feed.PROFILE_IMAGE_URL}` // ⭐️ 서버 주소 추가
+                          ? `http://localhost:3010${feed.PROFILE_IMAGE_URL}` // ⭐️ 프로필 이미지 경로 수정
                           : '/default-avatar.png'
                         }
                         aria-label="profile-image"
                       />
                     }
-                    title={feed.USERNAME || `사용자 ID: ${feed.USER_ID}`}
+                    title={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="subtitle1" component="span" fontWeight="bold" sx={{ mr: 1 }}>
+                          {feed.USERNAME || `사용자 ID: ${feed.USER_ID}`}
+                        </Typography>
+                        {/* 배지 표시 추가 */}
+                        {feed.ACTIVE_BADGE_IMG && (
+                          <Avatar
+                            src={`http://localhost:3010${feed.ACTIVE_BADGE_IMG}`} // ⭐️ 배지 이미지 경로 수정
+                            alt={feed.ACTIVE_BADGE_NAME || 'Active Badge'}
+                            sx={{
+                              width: 20,
+                              height: 20,
+                              border: '1px solid gold'
+                            }}
+                            title={feed.ACTIVE_BADGE_NAME || '대표 배지'}
+                          />
+                        )}
+                      </Box>
+                    }
                     subheader={feed.CREATED_AT ? new Date(feed.CREATED_AT).toLocaleString() : ''}
                   />
 
                   <CardMedia
                     component="img"
                     height="400"
-                    image={feed.FILE_URL || 'placeholder-image-url.jpg'}
+                    image={feed.FILE_URL || 'placeholder-image-url.jpg'} // 게시물 이미지 경로 (서버 주소 없음)
                     alt={feed.imgName || '게시물 이미지'}
                     onClick={() => handleClickOpen(feed)}
                     style={{ cursor: 'pointer', objectFit: 'cover' }}
@@ -405,9 +431,25 @@ function Feed() {
           </Grid>
         </Box>
 
-        <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
+       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
           <DialogTitle>
-            {selectedFeed?.USERNAME || selectedFeed?.USER_ID}의 게시물
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography variant="h6" component="span" sx={{ mr: 1 }}>
+                {selectedFeed?.USERNAME || selectedFeed?.USER_ID}의 게시물
+              </Typography>
+              {selectedFeed?.ACTIVE_BADGE_IMG && (
+                <Avatar
+                  src={`http://localhost:3010${selectedFeed.ACTIVE_BADGE_IMG}`} // ⭐️ 배지 이미지 경로 수정
+                  alt={selectedFeed.ACTIVE_BADGE_NAME || 'Active Badge'}
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    border: '2px solid gold'
+                  }}
+                  title={selectedFeed.ACTIVE_BADGE_NAME || '대표 배지'}
+                />
+              )}
+            </Box>
             <IconButton
               edge="end"
               color="inherit"
@@ -423,7 +465,7 @@ function Feed() {
               <Typography variant="body1">{selectedFeed?.CONTENT}</Typography>
               {selectedFeed?.FILE_URL && (
                 <img
-                  src={selectedFeed.FILE_URL}
+                  src={selectedFeed.FILE_URL} // 게시물 이미지 경로 (서버 주소 없음)
                   alt={selectedFeed.FILE_NAME || '게시물 이미지'}
                   style={{ width: '100%', marginTop: '10px' }}
                 />
@@ -438,7 +480,7 @@ function Feed() {
                     <ListItem key={comment.COMMENT_ID || comment.id}>
                       <ListItemAvatar>
                         <Avatar src={comment.PROFILE_IMG && comment.PROFILE_IMG.length > 0
-                          ? `http://localhost:3010${comment.PROFILE_IMG}`
+                          ? `http://localhost:3010${comment.PROFILE_IMG}` // ⭐️ 댓글 프로필 이미지 경로 수정
                           : "placeholder-image-url.jpg"
                         }>
 
